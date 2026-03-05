@@ -152,10 +152,10 @@ const AddParcel: React.FC = () => {
         <CardContent>
           {/* Box selector */}
           <div className="mb-4">
-            <Label>Boîte</Label>
+            <Label>Box</Label>
             <Select value={boxId} onValueChange={setBoxId}>
               <SelectTrigger>
-                <SelectValue placeholder="Sélectionner une boîte (optionnel)" />
+                <SelectValue placeholder="Sélectionner une box (optionnel)" />
               </SelectTrigger>
               <SelectContent>
                 {boxes.map((box) => (

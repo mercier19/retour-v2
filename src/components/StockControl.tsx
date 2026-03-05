@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { Trash2, Download, Archive } from 'lucide-react';
 import { Box } from '@/types/database';
+import { exportParcelsToExcel } from '@/lib/stock-export';
 
 const StockControl: React.FC = () => {
   const { warehouseId, currentWarehouse, showAll } = useWarehouseFilter();
@@ -24,7 +25,7 @@ const StockControl: React.FC = () => {
   };
 
   const clearBox = async () => {
-    if (!selectedBox || !confirm('Vider cette boîte ? Les colis seront archivés.')) return;
+    if (!selectedBox || !confirm('Vider cette box ? Les colis seront archivés.')) return;
     const box = boxes.find((b) => b.id === selectedBox);
 
     const { data: parcels } = await supabase.from('parcels').select('*').eq('box_id', selectedBox);
@@ -44,7 +45,7 @@ const StockControl: React.FC = () => {
       await supabase.from('parcels').delete().eq('box_id', selectedBox);
       toast.success(`${parcels.length} colis archivés de ${box?.name}`);
     } else {
-      toast.info('Boîte déjà vide');
+      toast.info('Box déjà vide');
     }
   };
 
@@ -72,32 +73,6 @@ const StockControl: React.FC = () => {
     }
   };
 
-  const generateCsv = (rows: any[], filename: string) => {
-    if (rows.length === 0) { toast.info('Aucun colis à exporter'); return; }
-
-    const headers = ['Tracking', 'Boîte', 'Boutique', 'Wilaya', 'Commune', 'Statut', 'Manquant', 'Date'];
-    const csvRows = rows.map((p: any) => [
-      p.tracking,
-      p.box_name || p.boxes?.name || '',
-      p.boutique || '',
-      p.wilaya || '',
-      p.commune || '',
-      p.status || '',
-      p.is_missing ? 'Oui' : 'Non',
-      new Date(p.created_at).toLocaleDateString('fr-FR'),
-    ]);
-
-    const csv = [headers, ...csvRows].map((r) => r.map((c: string) => `"${c}"`).join(',')).join('\n');
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('Export téléchargé');
-  };
-
   const exportActive = async () => {
     if (!warehouseId) return;
     const { data } = await supabase
@@ -106,20 +81,18 @@ const StockControl: React.FC = () => {
       .eq('warehouse_id', warehouseId)
       .order('created_at', { ascending: false });
 
-    generateCsv(data || [], `stock_actif_${currentWarehouse?.code || 'export'}_${new Date().toISOString().split('T')[0]}.csv`);
+    exportParcelsToExcel(data || [], `stock_actif_${currentWarehouse?.code || 'export'}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   const exportAll = async () => {
     if (!warehouseId) return;
 
-    // Fetch active parcels
     const { data: active } = await supabase
       .from('parcels')
       .select('*, boxes(name)')
       .eq('warehouse_id', warehouseId)
       .order('created_at', { ascending: false });
 
-    // Fetch archived parcels
     const { data: archived } = await supabase
       .from('archived_parcels')
       .select('*')
@@ -132,7 +105,7 @@ const StockControl: React.FC = () => {
     }));
 
     const allParcels = [...activeMapped, ...(archived || [])];
-    generateCsv(allParcels, `stock_complet_${currentWarehouse?.code || 'export'}_${new Date().toISOString().split('T')[0]}.csv`);
+    exportParcelsToExcel(allParcels, `stock_complet_${currentWarehouse?.code || 'export'}_${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
   if (showAll) {
@@ -154,12 +127,12 @@ const StockControl: React.FC = () => {
 
       <Card className="glass-card">
         <CardHeader>
-          <CardTitle className="text-lg">Vider une boîte</CardTitle>
+          <CardTitle className="text-lg">Vider une box</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <Select value={selectedBox} onValueChange={setSelectedBox}>
             <SelectTrigger>
-              <SelectValue placeholder="Sélectionner une boîte" />
+              <SelectValue placeholder="Sélectionner une box" />
             </SelectTrigger>
             <SelectContent>
               {boxes.map((box) => (
@@ -188,10 +161,10 @@ const StockControl: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           <Button variant="outline" onClick={exportActive} className="w-full">
-            <Download className="w-4 h-4 mr-1" /> Exporter stock actif (CSV)
+            <Download className="w-4 h-4 mr-1" /> Exporter stock actif (Excel)
           </Button>
           <Button variant="outline" onClick={exportAll} className="w-full">
-            <Download className="w-4 h-4 mr-1" /> Exporter tout (actif + archivé) (CSV)
+            <Download className="w-4 h-4 mr-1" /> Exporter tout (actif + archivé) (Excel)
           </Button>
         </CardContent>
       </Card>

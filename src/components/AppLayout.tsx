@@ -53,7 +53,7 @@ const AppLayout: React.FC = () => {
   const navItems: { id: Page; label: string; icon: React.ElementType; show: boolean }[] = [
     { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, show: true },
     { id: 'add', label: 'Ajouter', icon: Plus, show: true },
-    { id: 'boxes', label: 'Boîtes', icon: BoxIcon, show: canManageBoxes },
+    { id: 'boxes', label: 'Boxes', icon: BoxIcon, show: canManageBoxes },
     { id: 'retours', label: 'Donner retours', icon: HandCoins, show: true },
     { id: 'stock', label: 'Contrôle stock', icon: PackageCheck, show: canManageStock },
     { id: 'stats', label: 'Statistiques', icon: BarChart3, show: true },

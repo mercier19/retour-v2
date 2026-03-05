@@ -56,7 +56,7 @@ const Dashboard: React.FC = () => {
 
   const stats = [
     { label: 'Total Colis', value: totalParcels, icon: Package, color: 'text-primary' },
-    { label: 'Boîtes', value: totalBoxes, icon: BoxIcon, color: 'text-accent' },
+    { label: 'Boxes', value: totalBoxes, icon: BoxIcon, color: 'text-accent' },
     { label: 'Manquants', value: missingCount, icon: AlertTriangle, color: 'text-destructive' },
     { label: "Aujourd'hui", value: todayCount, icon: TrendingUp, color: 'text-success' },
   ];
@@ -95,11 +95,11 @@ const Dashboard: React.FC = () => {
 
       <Card className="glass-card">
         <CardHeader>
-          <CardTitle className="text-lg">Boîtes {showAll ? 'de tous les dépôts' : 'du dépôt'}</CardTitle>
+          <CardTitle className="text-lg">Boxes {showAll ? 'de tous les dépôts' : 'du dépôt'}</CardTitle>
         </CardHeader>
         <CardContent>
           {boxes.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Aucune boîte</p>
+            <p className="text-muted-foreground text-sm">Aucune box</p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {boxes.map((box) => (
