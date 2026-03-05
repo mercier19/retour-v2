@@ -13,6 +13,7 @@ import SearchParcels from '@/components/SearchParcels';
 import Users from '@/components/admin/Users';
 import Warehouses from '@/components/admin/Warehouses';
 import { Button } from '@/components/ui/button';
+import yalidinelogo from '@/assets/logo_yalidine.png';
 import {
   LayoutDashboard,
   Plus,
@@ -26,7 +27,6 @@ import {
   LogOut,
   Menu,
   X,
-  Package,
 } from 'lucide-react';
 
 type Page = 'dashboard' | 'add' | 'boxes' | 'retours' | 'stock' | 'stats' | 'search' | 'users' | 'warehouses';
