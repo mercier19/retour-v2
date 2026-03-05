@@ -11,33 +11,61 @@ import { Plus, QrCode } from 'lucide-react';
 import { Box } from '@/types/database';
 
 const AddParcel: React.FC = () => {
-  const { warehouseId } = useWarehouseFilter();
+  const { warehouseId, showAll } = useWarehouseFilter();
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [tracking, setTracking] = useState('');
   const [boxId, setBoxId] = useState('');
   const [boutique, setBoutique] = useState('');
-  const [wilaya, setWilaya] = useState('');
-  const [commune, setCommune] = useState('');
+  const [boutiques, setBoutiques] = useState<string[]>([]);
+  const [boutiqueSearch, setBoutiqueSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'manual' | 'qr'>('manual');
   const [qrInput, setQrInput] = useState('');
 
   useEffect(() => {
     if (warehouseId) loadBoxes();
+    loadBoutiques();
   }, [warehouseId]);
 
   const loadBoxes = async () => {
+    if (!warehouseId) return;
     const { data } = await supabase
       .from('boxes')
       .select('*')
-      .eq('warehouse_id', warehouseId!)
+      .eq('warehouse_id', warehouseId)
       .order('name');
     setBoxes((data as Box[]) || []);
   };
 
+  const loadBoutiques = async () => {
+    // Get unique boutiques from active parcels
+    const { data: activeParcels } = await supabase
+      .from('parcels')
+      .select('boutique')
+      .not('boutique', 'is', null);
+    
+    // Get unique boutiques from archived parcels
+    const { data: archivedParcels } = await supabase
+      .from('archived_parcels')
+      .select('boutique')
+      .not('boutique', 'is', null);
+
+    const allBoutiques = new Set<string>();
+    activeParcels?.forEach((p) => { if (p.boutique) allBoutiques.add(p.boutique); });
+    archivedParcels?.forEach((p) => { if (p.boutique) allBoutiques.add(p.boutique); });
+    setBoutiques(Array.from(allBoutiques).sort());
+  };
+
+  const filteredBoutiques = boutiques.filter((b) =>
+    b.toLowerCase().includes(boutiqueSearch.toLowerCase())
+  );
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!warehouseId || !tracking.trim()) return;
+    if (!warehouseId || !tracking.trim()) {
+      if (showAll) toast.error('Veuillez sélectionner un dépôt spécifique pour ajouter un colis');
+      return;
+    }
 
     setLoading(true);
     const { error } = await supabase.from('parcels').insert({
@@ -45,8 +73,6 @@ const AddParcel: React.FC = () => {
       tracking: tracking.trim(),
       box_id: boxId || null,
       boutique: boutique.trim() || null,
-      wilaya: wilaya.trim() || null,
-      commune: commune.trim() || null,
     });
 
     if (error) {
@@ -59,15 +85,16 @@ const AddParcel: React.FC = () => {
       toast.success('Colis ajouté avec succès');
       setTracking('');
       setBoutique('');
-      setWilaya('');
-      setCommune('');
+      setBoutiqueSearch('');
     }
     setLoading(false);
   };
 
   const handleQrScan = async () => {
-    if (!qrInput.trim() || !warehouseId) return;
-    // Parse QR: expected format "tracking|boutique|wilaya|commune"
+    if (!qrInput.trim() || !warehouseId) {
+      if (showAll) toast.error('Veuillez sélectionner un dépôt spécifique');
+      return;
+    }
     const parts = qrInput.split('|');
     const t = parts[0]?.trim();
     if (!t) { toast.error('Format QR invalide'); return; }
@@ -77,9 +104,7 @@ const AddParcel: React.FC = () => {
       warehouse_id: warehouseId,
       tracking: t,
       box_id: boxId || null,
-      boutique: parts[1]?.trim() || null,
-      wilaya: parts[2]?.trim() || null,
-      commune: parts[3]?.trim() || null,
+      boutique: parts[1]?.trim() || boutique.trim() || null,
     });
 
     if (error) {
@@ -90,6 +115,19 @@ const AddParcel: React.FC = () => {
     setQrInput('');
     setLoading(false);
   };
+
+  if (showAll) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Ajouter des colis</h1>
+        <Card className="glass-card">
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground">Veuillez sélectionner un dépôt spécifique pour ajouter des colis.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -112,7 +150,7 @@ const AddParcel: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Box selector shared between modes */}
+          {/* Box selector */}
           <div className="mb-4">
             <Label>Boîte</Label>
             <Select value={boxId} onValueChange={setBoxId}>
@@ -127,25 +165,43 @@ const AddParcel: React.FC = () => {
             </Select>
           </div>
 
+          {/* Boutique selector */}
+          <div className="mb-4">
+            <Label>Boutique</Label>
+            <Select value={boutique} onValueChange={setBoutique}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner une boutique" />
+              </SelectTrigger>
+              <SelectContent>
+                <div className="p-2">
+                  <Input
+                    placeholder="Rechercher une boutique..."
+                    value={boutiqueSearch}
+                    onChange={(e) => setBoutiqueSearch(e.target.value)}
+                    className="mb-2"
+                  />
+                </div>
+                {filteredBoutiques.length > 0 ? (
+                  filteredBoutiques.slice(0, 50).map((b) => (
+                    <SelectItem key={b} value={b}>{b}</SelectItem>
+                  ))
+                ) : (
+                  <p className="text-xs text-muted-foreground p-2 text-center">Aucune boutique trouvée</p>
+                )}
+              </SelectContent>
+            </Select>
+            {boutique && (
+              <button onClick={() => { setBoutique(''); setBoutiqueSearch(''); }} className="text-xs text-muted-foreground mt-1 hover:text-foreground">
+                ✕ Effacer la boutique
+              </button>
+            )}
+          </div>
+
           {mode === 'manual' ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label>Tracking *</Label>
-                <Input value={tracking} onChange={(e) => setTracking(e.target.value)} placeholder="Numéro de tracking" required />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>Boutique</Label>
-                  <Input value={boutique} onChange={(e) => setBoutique(e.target.value)} placeholder="Nom boutique" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Wilaya</Label>
-                  <Input value={wilaya} onChange={(e) => setWilaya(e.target.value)} placeholder="Wilaya" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Commune</Label>
-                  <Input value={commune} onChange={(e) => setCommune(e.target.value)} placeholder="Commune" />
-                </div>
+                <Input value={tracking} onChange={(e) => setTracking(e.target.value)} placeholder="Numéro de tracking" required autoFocus />
               </div>
               <Button type="submit" disabled={loading}>
                 {loading ? 'Ajout...' : 'Ajouter le colis'}
@@ -154,7 +210,7 @@ const AddParcel: React.FC = () => {
           ) : (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Données QR (tracking|boutique|wilaya|commune)</Label>
+                <Label>Données QR (tracking|boutique)</Label>
                 <Input
                   value={qrInput}
                   onChange={(e) => setQrInput(e.target.value)}
