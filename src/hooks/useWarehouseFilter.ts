@@ -14,7 +14,7 @@ export const useWarehouseFilter = () => {
   };
 
   const canManageBoxes = hasRole('chef_agence', 'regional', 'super_admin');
-  const canManageStock = hasRole('chef_agence', 'regional', 'super_admin');
+  const canManageStock = hasRole('regional', 'super_admin');
   const isAdmin = hasRole('super_admin');
 
   return {

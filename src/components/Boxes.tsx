@@ -51,7 +51,7 @@ const Boxes: React.FC = () => {
     if (error) {
       toast.error(error.code === '23505' ? 'Ce nom existe déjà' : error.message);
     } else {
-      toast.success('Boîte créée');
+      toast.success('Box créée');
       setNewName('');
       setNewQuota('');
       loadBoxes();
@@ -65,23 +65,23 @@ const Boxes: React.FC = () => {
       quota: editQuota ? parseInt(editQuota) : null,
     }).eq('id', id);
     if (error) toast.error(error.message);
-    else { toast.success('Boîte modifiée'); setEditingId(null); loadBoxes(); }
+    else { toast.success('Box modifiée'); setEditingId(null); loadBoxes(); }
   };
 
   const deleteBox = async (id: string) => {
-    if (!confirm('Supprimer cette boîte ?')) return;
+    if (!confirm('Supprimer cette box ?')) return;
     const { error } = await supabase.from('boxes').delete().eq('id', id);
     if (error) toast.error(error.message);
-    else { toast.success('Boîte supprimée'); loadBoxes(); }
+    else { toast.success('Box supprimée'); loadBoxes(); }
   };
 
   if (showAll) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold">Gestion des boîtes</h1>
+        <h1 className="text-2xl font-bold">Gestion des boxes</h1>
         <Card className="glass-card">
           <CardContent className="p-8 text-center">
-            <p className="text-muted-foreground">Veuillez sélectionner un dépôt spécifique pour gérer les boîtes.</p>
+            <p className="text-muted-foreground">Veuillez sélectionner un dépôt spécifique pour gérer les boxes.</p>
           </CardContent>
         </Card>
       </div>
@@ -90,11 +90,11 @@ const Boxes: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Gestion des boîtes</h1>
+      <h1 className="text-2xl font-bold">Gestion des boxes</h1>
 
       <Card className="glass-card">
         <CardHeader>
-          <CardTitle className="text-lg">Nouvelle boîte</CardTitle>
+          <CardTitle className="text-lg">Nouvelle box</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex gap-3 items-end">
@@ -102,7 +102,7 @@ const Boxes: React.FC = () => {
               <Input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
-                placeholder="Nom de la boîte"
+                placeholder="Nom de la box"
                 onKeyDown={(e) => e.key === 'Enter' && createBox()}
               />
             </div>
@@ -148,7 +148,7 @@ const Boxes: React.FC = () => {
             </CardContent>
           </Card>
         ))}
-        {boxes.length === 0 && <p className="text-muted-foreground text-center py-8">Aucune boîte</p>}
+        {boxes.length === 0 && <p className="text-muted-foreground text-center py-8">Aucune box</p>}
       </div>
     </div>
   );

@@ -95,11 +95,11 @@ const Dashboard: React.FC = () => {
 
       <Card className="glass-card">
         <CardHeader>
-          <CardTitle className="text-lg">Boîtes {showAll ? 'de tous les dépôts' : 'du dépôt'}</CardTitle>
+          <CardTitle className="text-lg">Boxes {showAll ? 'de tous les dépôts' : 'du dépôt'}</CardTitle>
         </CardHeader>
         <CardContent>
           {boxes.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Aucune boîte</p>
+            <p className="text-muted-foreground text-sm">Aucune box</p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {boxes.map((box) => (
