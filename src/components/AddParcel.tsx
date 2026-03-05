@@ -95,16 +95,18 @@ const AddParcel: React.FC = () => {
       if (showAll) toast.error('Veuillez sélectionner un dépôt spécifique');
       return;
     }
-    const parts = qrInput.split('|');
-    const t = parts[0]?.trim();
+    const parts = qrInput.split(',');
+    const t = parts[1]?.trim();
     if (!t) { toast.error('Format QR invalide'); return; }
 
+    const { data: { user } } = await supabase.auth.getUser();
     setLoading(true);
     const { error } = await supabase.from('parcels').insert({
       warehouse_id: warehouseId,
       tracking: t,
       box_id: boxId || null,
-      boutique: parts[1]?.trim() || null,
+      boutique: parts[3]?.trim() || null,
+      added_by: user?.id || null,
     });
 
     if (error) {
