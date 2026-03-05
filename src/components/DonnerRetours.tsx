@@ -295,12 +295,14 @@ const DonnerRetours: React.FC = () => {
           </Card>
         ))}
 
-        {search.trim().length >= 2 && !loading && parcels.length === 0 && (
+        {search && !loading && parcels.length === 0 && (
           <p className="text-muted-foreground text-center py-8">Aucun colis trouvé</p>
         )}
 
-        {search.trim().length < 2 && (
-          <p className="text-muted-foreground text-center py-8">Tapez au moins 2 caractères pour rechercher</p>
+        {!search && (
+          <p className="text-muted-foreground text-center py-8">
+            {searchMode === 'boutique' ? 'Sélectionnez une boutique pour afficher les colis' : 'Tapez au moins 2 caractères pour rechercher'}
+          </p>
         )}
       </div>
     </div>
