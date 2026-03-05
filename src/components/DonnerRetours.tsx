@@ -65,7 +65,8 @@ const DonnerRetours: React.FC = () => {
         box_name: p.boxes?.name || null,
         is_missing: p.is_missing,
         created_at: p.created_at,
-        added_by: null,
+        added_by: p.added_by,
+        added_by_name: p.profiles?.full_name || null,
         warehouse_id: p.warehouse_id,
         status: p.status,
       })));
