@@ -17,6 +17,7 @@ interface ParcelWithDetails {
   is_missing: boolean | null;
   created_at: string;
   added_by: string | null;
+  added_by_name: string | null;
   warehouse_id: string;
   status: string | null;
 }
