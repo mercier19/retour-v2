@@ -93,6 +93,45 @@ export type Database = {
           },
         ]
       }
+      parcel_status_log: {
+        Row: {
+          changed_by: string | null
+          created_at: string
+          id: string
+          parcel_id: string
+          status: string
+        }
+        Insert: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          parcel_id: string
+          status: string
+        }
+        Update: {
+          changed_by?: string | null
+          created_at?: string
+          id?: string
+          parcel_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parcel_status_log_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parcel_status_log_parcel_id_fkey"
+            columns: ["parcel_id"]
+            isOneToOne: false
+            referencedRelation: "parcels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parcels: {
         Row: {
           added_by: string | null
