@@ -14,16 +14,241 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      archived_parcels: {
+        Row: {
+          archived_at: string
+          boutique: string | null
+          box_name: string | null
+          commune: string | null
+          created_at: string | null
+          id: string
+          status: string | null
+          tracking: string
+          warehouse_id: string
+          wilaya: string | null
+        }
+        Insert: {
+          archived_at?: string
+          boutique?: string | null
+          box_name?: string | null
+          commune?: string | null
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          tracking: string
+          warehouse_id: string
+          wilaya?: string | null
+        }
+        Update: {
+          archived_at?: string
+          boutique?: string | null
+          box_name?: string | null
+          commune?: string | null
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          tracking?: string
+          warehouse_id?: string
+          wilaya?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "archived_parcels_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      boxes: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          quota: number | null
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          quota?: number | null
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          quota?: number | null
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "boxes_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parcels: {
+        Row: {
+          boutique: string | null
+          box_id: string | null
+          commune: string | null
+          created_at: string
+          given_at: string | null
+          id: string
+          is_missing: boolean | null
+          status: string | null
+          tracking: string
+          updated_at: string
+          warehouse_id: string
+          wilaya: string | null
+        }
+        Insert: {
+          boutique?: string | null
+          box_id?: string | null
+          commune?: string | null
+          created_at?: string
+          given_at?: string | null
+          id?: string
+          is_missing?: boolean | null
+          status?: string | null
+          tracking: string
+          updated_at?: string
+          warehouse_id: string
+          wilaya?: string | null
+        }
+        Update: {
+          boutique?: string | null
+          box_id?: string | null
+          commune?: string | null
+          created_at?: string
+          given_at?: string | null
+          id?: string
+          is_missing?: boolean | null
+          status?: string | null
+          tracking?: string
+          updated_at?: string
+          warehouse_id?: string
+          wilaya?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parcels_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "boxes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parcels_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_warehouses: {
+        Row: {
+          user_id: string
+          warehouse_id: string
+        }
+        Insert: {
+          user_id: string
+          warehouse_id: string
+        }
+        Update: {
+          user_id?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_warehouses_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_warehouses_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warehouses: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          type: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          type?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_super_admin: { Args: never; Returns: boolean }
+      setup_super_admin: { Args: { _user_id: string }; Returns: undefined }
+      user_role: {
+        Args: never
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      user_warehouse_ids: { Args: never; Returns: string[] }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "operations" | "chef_agence" | "regional" | "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +375,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["operations", "chef_agence", "regional", "super_admin"],
+    },
   },
 } as const
