@@ -1,4 +1,3 @@
-import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 
 type ParcelExportRow = {
@@ -13,11 +12,13 @@ type ParcelExportRow = {
   created_at: string;
 };
 
-export const exportParcelsToExcel = (rows: ParcelExportRow[], filename: string) => {
+export const exportParcelsToExcel = async (rows: ParcelExportRow[], filename: string) => {
   if (rows.length === 0) {
     toast.info('Aucun colis à exporter');
     return;
   }
+
+  const XLSX = await import('xlsx');
 
   const worksheetData = rows.map((p) => ({
     Tracking: p.tracking,
