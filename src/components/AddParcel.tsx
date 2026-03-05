@@ -19,7 +19,7 @@ const AddParcel: React.FC = () => {
   const [boutiques, setBoutiques] = useState<string[]>([]);
   const [boutiqueSearch, setBoutiqueSearch] = useState('');
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<'manual' | 'qr'>('manual');
+  const [mode, setMode] = useState<'manual' | 'qr'>('qr');
   const [qrInput, setQrInput] = useState('');
 
   useEffect(() => {
