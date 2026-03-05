@@ -143,7 +143,7 @@ const AppLayout: React.FC = () => {
           <button onClick={() => setSidebarOpen(true)}>
             <Menu className="w-5 h-5" />
           </button>
-          <span className="font-medium text-sm" style={{ fontFamily: 'var(--font-display)' }}>Yalidine</span>
+          <img src={yalidinelogo} alt="Yalidine" className="h-6" />
         </header>
         <div className="p-4 lg:p-6 max-w-6xl mx-auto">
           {renderPage()}
