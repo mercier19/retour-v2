@@ -224,6 +224,7 @@ const DonnerRetours: React.FC = () => {
                   {parcel.boutique && <span className="font-medium text-foreground/80">{parcel.boutique}</span>}
                   {parcel.box_name && <span>📦 {parcel.box_name}</span>}
                   <span>🕐 {formatDate(parcel.created_at)}</span>
+                  {parcel.added_by_name && <span>👤 {parcel.added_by_name}</span>}
                 </div>
               </div>
               <Button

@@ -216,7 +216,7 @@ const AddParcel: React.FC = () => {
           ) : (
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Données QR (tracking|boutique)</Label>
+                <Label>Données QR (format CSV)</Label>
                 <Input
                   value={qrInput}
                   onChange={(e) => setQrInput(e.target.value)}
