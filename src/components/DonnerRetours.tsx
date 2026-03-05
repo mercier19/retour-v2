@@ -77,8 +77,27 @@ const DonnerRetours: React.FC = () => {
     setLoading(false);
   };
 
+  const loadBoutiques = async () => {
+    const ids = showAll ? warehouseIds : (warehouseId ? [warehouseId] : []);
+    if (ids.length === 0) return;
+    const { data } = await supabase
+      .from('parcels')
+      .select('boutique')
+      .eq('status', 'in_stock')
+      .in('warehouse_id', ids)
+      .not('boutique', 'is', null);
+    const unique = Array.from(new Set((data || []).map((p: any) => p.boutique).filter(Boolean))).sort() as string[];
+    setBoutiques(unique);
+  };
+
   useEffect(() => {
-    if (search.trim().length >= 2) {
+    loadBoutiques();
+  }, [warehouseId, showAll]);
+
+  useEffect(() => {
+    if (searchMode === 'boutique' && search) {
+      loadParcels(search);
+    } else if (searchMode === 'tracking' && search.trim().length >= 2) {
       const timeout = setTimeout(() => loadParcels(search), 300);
       return () => clearTimeout(timeout);
     } else {
