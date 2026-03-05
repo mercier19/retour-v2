@@ -95,6 +95,7 @@ export type Database = {
       }
       parcels: {
         Row: {
+          added_by: string | null
           boutique: string | null
           box_id: string | null
           commune: string | null
@@ -109,6 +110,7 @@ export type Database = {
           wilaya: string | null
         }
         Insert: {
+          added_by?: string | null
           boutique?: string | null
           box_id?: string | null
           commune?: string | null
@@ -123,6 +125,7 @@ export type Database = {
           wilaya?: string | null
         }
         Update: {
+          added_by?: string | null
           boutique?: string | null
           box_id?: string | null
           commune?: string | null
@@ -137,6 +140,13 @@ export type Database = {
           wilaya?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "parcels_added_by_fkey"
+            columns: ["added_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "parcels_box_id_fkey"
             columns: ["box_id"]

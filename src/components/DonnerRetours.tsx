@@ -17,6 +17,7 @@ interface ParcelWithDetails {
   is_missing: boolean | null;
   created_at: string;
   added_by: string | null;
+  added_by_name: string | null;
   warehouse_id: string;
   status: string | null;
 }
@@ -38,7 +39,7 @@ const DonnerRetours: React.FC = () => {
     setLoading(true);
     let dbQuery = supabase
       .from('parcels')
-      .select('id, tracking, boutique, box_id, is_missing, created_at, warehouse_id, status, boxes(name)')
+      .select('id, tracking, boutique, box_id, is_missing, created_at, warehouse_id, status, added_by, boxes(name), profiles:added_by(full_name)')
       .eq('status', 'in_stock');
 
     if (showAll) {
@@ -64,7 +65,8 @@ const DonnerRetours: React.FC = () => {
         box_name: p.boxes?.name || null,
         is_missing: p.is_missing,
         created_at: p.created_at,
-        added_by: null,
+        added_by: p.added_by,
+        added_by_name: p.profiles?.full_name || null,
         warehouse_id: p.warehouse_id,
         status: p.status,
       })));
@@ -222,6 +224,7 @@ const DonnerRetours: React.FC = () => {
                   {parcel.boutique && <span className="font-medium text-foreground/80">{parcel.boutique}</span>}
                   {parcel.box_name && <span>📦 {parcel.box_name}</span>}
                   <span>🕐 {formatDate(parcel.created_at)}</span>
+                  {parcel.added_by_name && <span>👤 {parcel.added_by_name}</span>}
                 </div>
               </div>
               <Button

@@ -41,6 +41,7 @@ export interface Parcel {
   status: string | null;
   is_missing: boolean | null;
   given_at: string | null;
+  added_by: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -1,0 +1,1 @@
+ALTER TABLE public.parcels ADD COLUMN added_by uuid REFERENCES public.profiles(id);
