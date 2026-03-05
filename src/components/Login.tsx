@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
+import yalidinelogo from '@/assets/logo_yalidine.png';
 
 const Login: React.FC = () => {
   const { signIn } = useAuth();
@@ -26,10 +27,9 @@ const Login: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md glass-card">
         <CardHeader className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 bg-primary rounded-2xl flex items-center justify-center">
-            <Package className="w-8 h-8 text-primary-foreground" />
+          <div className="mx-auto">
+            <img src={yalidinelogo} alt="Yalidine Express" className="h-14 mx-auto" />
           </div>
-          <CardTitle className="text-2xl font-bold">Yalidine</CardTitle>
           <p className="text-muted-foreground text-sm">Système de gestion des colis</p>
         </CardHeader>
         <CardContent>

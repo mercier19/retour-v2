@@ -13,6 +13,7 @@ import SearchParcels from '@/components/SearchParcels';
 import Users from '@/components/admin/Users';
 import Warehouses from '@/components/admin/Warehouses';
 import { Button } from '@/components/ui/button';
+import yalidinelogo from '@/assets/logo_yalidine.png';
 import {
   LayoutDashboard,
   Plus,
@@ -26,7 +27,6 @@ import {
   LogOut,
   Menu,
   X,
-  Package,
 } from 'lucide-react';
 
 type Page = 'dashboard' | 'add' | 'boxes' | 'retours' | 'stock' | 'stats' | 'search' | 'users' | 'warehouses';
@@ -84,16 +84,13 @@ const AppLayout: React.FC = () => {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-4 flex items-center gap-3 border-b border-sidebar-border">
-            <div className="w-9 h-9 bg-sidebar-primary rounded-lg flex items-center justify-center">
-              <Package className="w-5 h-5 text-sidebar-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="font-bold text-sidebar-foreground text-sm" style={{ fontFamily: 'var(--font-display)' }}>Yalidine</h1>
+            <img src={yalidinelogo} alt="Yalidine" className="h-8 brightness-0 invert" />
+            <div className="ml-auto flex items-center gap-2">
               <p className="text-xs text-sidebar-foreground/60">{currentWarehouse.name}</p>
+              <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-sidebar-foreground">
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <button onClick={() => setSidebarOpen(false)} className="lg:hidden ml-auto text-sidebar-foreground">
-              <X className="w-5 h-5" />
-            </button>
           </div>
 
           {/* Warehouse Selector */}
@@ -146,7 +143,7 @@ const AppLayout: React.FC = () => {
           <button onClick={() => setSidebarOpen(true)}>
             <Menu className="w-5 h-5" />
           </button>
-          <span className="font-medium text-sm" style={{ fontFamily: 'var(--font-display)' }}>Yalidine</span>
+          <img src={yalidinelogo} alt="Yalidine" className="h-6" />
         </header>
         <div className="p-4 lg:p-6 max-w-6xl mx-auto">
           {renderPage()}
