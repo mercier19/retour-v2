@@ -7,7 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 const COLORS = ['hsl(215, 90%, 42%)', 'hsl(38, 95%, 55%)', 'hsl(142, 72%, 40%)', 'hsl(0, 72%, 51%)', 'hsl(280, 60%, 50%)'];
 
 const Statistics: React.FC = () => {
-  const { warehouseId } = useWarehouseFilter();
+  const { warehouseId, warehouseIds, showAll } = useWarehouseFilter();
   const [boutiqueData, setBoutiqueData] = useState<{ name: string; count: number }[]>([]);
   const [wilayaData, setWilayaData] = useState<{ name: string; count: number }[]>([]);
   const [statusData, setStatusData] = useState<{ name: string; value: number }[]>([]);
@@ -15,13 +15,22 @@ const Statistics: React.FC = () => {
   const [totalGiven, setTotalGiven] = useState(0);
 
   useEffect(() => {
-    if (warehouseId) loadStats();
-  }, [warehouseId]);
+    if (warehouseIds.length > 0) loadStats();
+  }, [warehouseId, showAll, warehouseIds.length]);
 
   const loadStats = async () => {
-    if (!warehouseId) return;
+    if (warehouseIds.length === 0) return;
 
-    const { data: parcels } = await supabase.from('parcels').select('*').eq('warehouse_id', warehouseId);
+    let query = supabase.from('parcels').select('*');
+    if (showAll) {
+      query = query.in('warehouse_id', warehouseIds);
+    } else if (warehouseId) {
+      query = query.eq('warehouse_id', warehouseId);
+    } else {
+      return;
+    }
+
+    const { data: parcels } = await query;
     if (!parcels) return;
 
     setTotalParcels(parcels.length);
@@ -58,7 +67,10 @@ const Statistics: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Statistiques</h1>
+      <h1 className="text-2xl font-bold">
+        Statistiques
+        {showAll && <span className="text-sm font-normal text-muted-foreground ml-2">(Tous les dépôts)</span>}
+      </h1>
 
       <div className="grid grid-cols-2 gap-4">
         <Card className="glass-card">

@@ -3,10 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useWarehouseFilter } from '@/hooks/useWarehouseFilter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, BoxIcon, AlertTriangle, TrendingUp } from 'lucide-react';
-import { Box, Parcel } from '@/types/database';
+import { Box } from '@/types/database';
 
 const Dashboard: React.FC = () => {
-  const { warehouseId } = useWarehouseFilter();
+  const { warehouseId, warehouseIds, showAll } = useWarehouseFilter();
   const [totalParcels, setTotalParcels] = useState(0);
   const [totalBoxes, setTotalBoxes] = useState(0);
   const [missingCount, setMissingCount] = useState(0);
@@ -14,18 +14,25 @@ const Dashboard: React.FC = () => {
   const [boxes, setBoxes] = useState<(Box & { parcel_count: number })[]>([]);
 
   useEffect(() => {
-    if (!warehouseId) return;
+    if (warehouseIds.length === 0) return;
     loadStats();
-  }, [warehouseId]);
+  }, [warehouseId, showAll, warehouseIds.length]);
+
+  const applyWarehouseFilter = (query: any) => {
+    if (showAll) {
+      return query.in('warehouse_id', warehouseIds);
+    }
+    return query.eq('warehouse_id', warehouseId);
+  };
 
   const loadStats = async () => {
-    if (!warehouseId) return;
+    if (warehouseIds.length === 0) return;
 
     const [parcelsRes, boxesRes, missingRes, todayRes] = await Promise.all([
-      supabase.from('parcels').select('id', { count: 'exact', head: true }).eq('warehouse_id', warehouseId),
-      supabase.from('boxes').select('*').eq('warehouse_id', warehouseId),
-      supabase.from('parcels').select('id', { count: 'exact', head: true }).eq('warehouse_id', warehouseId).eq('is_missing', true),
-      supabase.from('parcels').select('id', { count: 'exact', head: true }).eq('warehouse_id', warehouseId).gte('created_at', new Date().toISOString().split('T')[0]),
+      applyWarehouseFilter(supabase.from('parcels').select('id', { count: 'exact', head: true })),
+      applyWarehouseFilter(supabase.from('boxes').select('*')),
+      applyWarehouseFilter(supabase.from('parcels').select('id', { count: 'exact', head: true }).eq('is_missing', true)),
+      applyWarehouseFilter(supabase.from('parcels').select('id', { count: 'exact', head: true }).gte('created_at', new Date().toISOString().split('T')[0])),
     ]);
 
     setTotalParcels(parcelsRes.count || 0);
@@ -33,7 +40,6 @@ const Dashboard: React.FC = () => {
     setMissingCount(missingRes.count || 0);
     setTodayCount(todayRes.count || 0);
 
-    // Load box parcel counts
     if (boxesRes.data) {
       const boxesWithCounts = await Promise.all(
         (boxesRes.data as Box[]).map(async (box) => {
@@ -57,7 +63,10 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Tableau de bord</h1>
+      <h1 className="text-2xl font-bold">
+        Tableau de bord
+        {showAll && <span className="text-sm font-normal text-muted-foreground ml-2">(Tous les dépôts)</span>}
+      </h1>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat) => (
@@ -86,11 +95,11 @@ const Dashboard: React.FC = () => {
 
       <Card className="glass-card">
         <CardHeader>
-          <CardTitle className="text-lg">Boîtes du dépôt</CardTitle>
+          <CardTitle className="text-lg">Boîtes {showAll ? 'de tous les dépôts' : 'du dépôt'}</CardTitle>
         </CardHeader>
         <CardContent>
           {boxes.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Aucune boîte dans ce dépôt</p>
+            <p className="text-muted-foreground text-sm">Aucune boîte</p>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {boxes.map((box) => (

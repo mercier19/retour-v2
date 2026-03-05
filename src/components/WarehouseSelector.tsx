@@ -5,22 +5,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 const WarehouseSelector: React.FC = () => {
   const { warehouses } = useAuth();
-  const { currentWarehouse, setCurrentWarehouse } = useWarehouse();
+  const { currentWarehouse, setCurrentWarehouse, showAll, setShowAll } = useWarehouse();
 
   if (warehouses.length <= 1) return null;
 
+  const currentValue = showAll ? '__all__' : (currentWarehouse?.id || '');
+
   return (
     <Select
-      value={currentWarehouse?.id || ''}
+      value={currentValue}
       onValueChange={(id) => {
-        const w = warehouses.find((w) => w.id === id);
-        if (w) setCurrentWarehouse(w);
+        if (id === '__all__') {
+          setShowAll(true);
+        } else {
+          const w = warehouses.find((w) => w.id === id);
+          if (w) setCurrentWarehouse(w);
+        }
       }}
     >
-      <SelectTrigger className="w-[220px] bg-sidebar-accent text-sidebar-foreground border-sidebar-border">
+      <SelectTrigger className="w-full bg-sidebar-accent text-sidebar-foreground border-sidebar-border">
         <SelectValue placeholder="Sélectionner un dépôt" />
       </SelectTrigger>
       <SelectContent>
+        <SelectItem value="__all__">📊 Tous les dépôts</SelectItem>
         {warehouses.map((w) => (
           <SelectItem key={w.id} value={w.id}>
             {w.name}
