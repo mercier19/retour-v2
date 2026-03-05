@@ -56,7 +56,7 @@ const Dashboard: React.FC = () => {
 
   const stats = [
     { label: 'Total Colis', value: totalParcels, icon: Package, color: 'text-primary' },
-    { label: 'Boîtes', value: totalBoxes, icon: BoxIcon, color: 'text-accent' },
+    { label: 'Boxes', value: totalBoxes, icon: BoxIcon, color: 'text-accent' },
     { label: 'Manquants', value: missingCount, icon: AlertTriangle, color: 'text-destructive' },
     { label: "Aujourd'hui", value: todayCount, icon: TrendingUp, color: 'text-success' },
   ];
