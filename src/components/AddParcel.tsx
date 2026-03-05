@@ -19,7 +19,7 @@ const AddParcel: React.FC = () => {
   const [boutiques, setBoutiques] = useState<string[]>([]);
   const [boutiqueSearch, setBoutiqueSearch] = useState('');
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<'manual' | 'qr'>('manual');
+  const [mode, setMode] = useState<'manual' | 'qr'>('qr');
   const [qrInput, setQrInput] = useState('');
 
   useEffect(() => {
@@ -104,7 +104,7 @@ const AddParcel: React.FC = () => {
       warehouse_id: warehouseId,
       tracking: t,
       box_id: boxId || null,
-      boutique: parts[1]?.trim() || boutique.trim() || null,
+      boutique: parts[1]?.trim() || null,
     });
 
     if (error) {
@@ -165,37 +165,39 @@ const AddParcel: React.FC = () => {
             </Select>
           </div>
 
-          {/* Boutique selector */}
-          <div className="mb-4">
-            <Label>Boutique</Label>
-            <Select value={boutique} onValueChange={setBoutique}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner une boutique" />
-              </SelectTrigger>
-              <SelectContent>
-                <div className="p-2">
-                  <Input
-                    placeholder="Rechercher une boutique..."
-                    value={boutiqueSearch}
-                    onChange={(e) => setBoutiqueSearch(e.target.value)}
-                    className="mb-2"
-                  />
-                </div>
-                {filteredBoutiques.length > 0 ? (
-                  filteredBoutiques.slice(0, 50).map((b) => (
-                    <SelectItem key={b} value={b}>{b}</SelectItem>
-                  ))
-                ) : (
-                  <p className="text-xs text-muted-foreground p-2 text-center">Aucune boutique trouvée</p>
-                )}
-              </SelectContent>
-            </Select>
-            {boutique && (
-              <button onClick={() => { setBoutique(''); setBoutiqueSearch(''); }} className="text-xs text-muted-foreground mt-1 hover:text-foreground">
-                ✕ Effacer la boutique
-              </button>
-            )}
-          </div>
+          {/* Boutique selector - manual mode only */}
+          {mode === 'manual' && (
+            <div className="mb-4">
+              <Label>Boutique</Label>
+              <Select value={boutique} onValueChange={setBoutique}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une boutique" />
+                </SelectTrigger>
+                <SelectContent>
+                  <div className="p-2">
+                    <Input
+                      placeholder="Rechercher une boutique..."
+                      value={boutiqueSearch}
+                      onChange={(e) => setBoutiqueSearch(e.target.value)}
+                      className="mb-2"
+                    />
+                  </div>
+                  {filteredBoutiques.length > 0 ? (
+                    filteredBoutiques.slice(0, 50).map((b) => (
+                      <SelectItem key={b} value={b}>{b}</SelectItem>
+                    ))
+                  ) : (
+                    <p className="text-xs text-muted-foreground p-2 text-center">Aucune boutique trouvée</p>
+                  )}
+                </SelectContent>
+              </Select>
+              {boutique && (
+                <button onClick={() => { setBoutique(''); setBoutiqueSearch(''); }} className="text-xs text-muted-foreground mt-1 hover:text-foreground">
+                  ✕ Effacer la boutique
+                </button>
+              )}
+            </div>
+          )}
 
           {mode === 'manual' ? (
             <form onSubmit={handleSubmit} className="space-y-4">
