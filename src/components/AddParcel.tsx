@@ -67,12 +67,14 @@ const AddParcel: React.FC = () => {
       return;
     }
 
+    const { data: { user } } = await supabase.auth.getUser();
     setLoading(true);
     const { error } = await supabase.from('parcels').insert({
       warehouse_id: warehouseId,
       tracking: tracking.trim(),
       box_id: boxId || null,
       boutique: boutique.trim() || null,
+      added_by: user?.id || null,
     });
 
     if (error) {
