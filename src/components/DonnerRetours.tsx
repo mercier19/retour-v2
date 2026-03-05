@@ -29,7 +29,9 @@ const DonnerRetours: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
-  const [searchMode, setSearchMode] = useState<'tracking' | 'boutique'>('tracking');
+  const [searchMode, setSearchMode] = useState<'tracking' | 'boutique'>('boutique');
+  const [boutiques, setBoutiques] = useState<string[]>([]);
+  const [boutiqueSearch, setBoutiqueSearch] = useState('');
 
   const loadParcels = async (query: string) => {
     if ((!warehouseId && !showAll) || !query.trim()) {
