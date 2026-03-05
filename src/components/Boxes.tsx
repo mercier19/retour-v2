@@ -9,13 +9,14 @@ import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
 import { Box } from '@/types/database';
 
 const Boxes: React.FC = () => {
-  const { warehouseId } = useWarehouseFilter();
+  const { warehouseId, showAll } = useWarehouseFilter();
   const [boxes, setBoxes] = useState<(Box & { parcel_count: number })[]>([]);
   const [newName, setNewName] = useState('');
   const [newQuota, setNewQuota] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editQuota, setEditQuota] = useState('');
+  const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (warehouseId) loadBoxes();
@@ -36,11 +37,16 @@ const Boxes: React.FC = () => {
   };
 
   const createBox = async () => {
-    if (!warehouseId || !newName.trim()) return;
+    if (!warehouseId || !newName.trim()) {
+      if (showAll) toast.error('Veuillez sélectionner un dépôt spécifique');
+      if (!newName.trim()) toast.error('Le nom est requis');
+      return;
+    }
+    setCreating(true);
     const { error } = await supabase.from('boxes').insert({
       warehouse_id: warehouseId,
       name: newName.trim(),
-      quota: newQuota ? parseInt(newQuota) : null,
+      quota: newQuota ? parseInt(newQuota) : 0,
     });
     if (error) {
       toast.error(error.code === '23505' ? 'Ce nom existe déjà' : error.message);
@@ -50,6 +56,7 @@ const Boxes: React.FC = () => {
       setNewQuota('');
       loadBoxes();
     }
+    setCreating(false);
   };
 
   const updateBox = async (id: string) => {
@@ -68,6 +75,19 @@ const Boxes: React.FC = () => {
     else { toast.success('Boîte supprimée'); loadBoxes(); }
   };
 
+  if (showAll) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Gestion des boîtes</h1>
+        <Card className="glass-card">
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground">Veuillez sélectionner un dépôt spécifique pour gérer les boîtes.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Gestion des boîtes</h1>
@@ -79,12 +99,17 @@ const Boxes: React.FC = () => {
         <CardContent>
           <div className="flex gap-3 items-end">
             <div className="flex-1">
-              <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Nom de la boîte" />
+              <Input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Nom de la boîte"
+                onKeyDown={(e) => e.key === 'Enter' && createBox()}
+              />
             </div>
             <div className="w-24">
               <Input value={newQuota} onChange={(e) => setNewQuota(e.target.value)} placeholder="Quota" type="number" />
             </div>
-            <Button onClick={createBox} disabled={!newName.trim()}>
+            <Button onClick={createBox} disabled={!newName.trim() || creating}>
               <Plus className="w-4 h-4 mr-1" /> Créer
             </Button>
           </div>

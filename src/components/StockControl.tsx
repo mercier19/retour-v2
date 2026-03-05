@@ -9,7 +9,7 @@ import { Trash2, Download, Archive } from 'lucide-react';
 import { Box } from '@/types/database';
 
 const StockControl: React.FC = () => {
-  const { warehouseId, currentWarehouse } = useWarehouseFilter();
+  const { warehouseId, currentWarehouse, showAll } = useWarehouseFilter();
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [selectedBox, setSelectedBox] = useState('');
 
@@ -27,10 +27,8 @@ const StockControl: React.FC = () => {
     if (!selectedBox || !confirm('Vider cette boîte ? Les colis seront archivés.')) return;
     const box = boxes.find((b) => b.id === selectedBox);
 
-    // Get parcels to archive
     const { data: parcels } = await supabase.from('parcels').select('*').eq('box_id', selectedBox);
     if (parcels && parcels.length > 0) {
-      // Archive
       await supabase.from('archived_parcels').insert(
         parcels.map((p: any) => ({
           warehouse_id: p.warehouse_id,
@@ -43,7 +41,6 @@ const StockControl: React.FC = () => {
           created_at: p.created_at,
         }))
       );
-      // Delete
       await supabase.from('parcels').delete().eq('box_id', selectedBox);
       toast.success(`${parcels.length} colis archivés de ${box?.name}`);
     } else {
@@ -75,32 +72,81 @@ const StockControl: React.FC = () => {
     }
   };
 
-  const exportExcel = async () => {
+  const generateCsv = (rows: any[], filename: string) => {
+    if (rows.length === 0) { toast.info('Aucun colis à exporter'); return; }
+
+    const headers = ['Tracking', 'Boîte', 'Boutique', 'Wilaya', 'Commune', 'Statut', 'Manquant', 'Date'];
+    const csvRows = rows.map((p: any) => [
+      p.tracking,
+      p.box_name || p.boxes?.name || '',
+      p.boutique || '',
+      p.wilaya || '',
+      p.commune || '',
+      p.status || '',
+      p.is_missing ? 'Oui' : 'Non',
+      new Date(p.created_at).toLocaleDateString('fr-FR'),
+    ]);
+
+    const csv = [headers, ...csvRows].map((r) => r.map((c: string) => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Export téléchargé');
+  };
+
+  const exportActive = async () => {
     if (!warehouseId) return;
-    const { data: parcels } = await supabase
+    const { data } = await supabase
       .from('parcels')
       .select('*, boxes(name)')
       .eq('warehouse_id', warehouseId)
       .order('created_at', { ascending: false });
 
-    if (!parcels || parcels.length === 0) { toast.info('Aucun colis à exporter'); return; }
-
-    const headers = ['Tracking', 'Boîte', 'Boutique', 'Wilaya', 'Commune', 'Statut', 'Manquant', 'Date'];
-    const rows = parcels.map((p: any) => [
-      p.tracking, p.boxes?.name || '', p.boutique || '', p.wilaya || '', p.commune || '',
-      p.status || '', p.is_missing ? 'Oui' : 'Non', new Date(p.created_at).toLocaleDateString('fr-FR')
-    ]);
-
-    const csv = [headers, ...rows].map((r) => r.map((c: string) => `"${c}"`).join(',')).join('\n');
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `stock_${currentWarehouse?.code || 'export'}_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('Export téléchargé');
+    generateCsv(data || [], `stock_actif_${currentWarehouse?.code || 'export'}_${new Date().toISOString().split('T')[0]}.csv`);
   };
+
+  const exportAll = async () => {
+    if (!warehouseId) return;
+
+    // Fetch active parcels
+    const { data: active } = await supabase
+      .from('parcels')
+      .select('*, boxes(name)')
+      .eq('warehouse_id', warehouseId)
+      .order('created_at', { ascending: false });
+
+    // Fetch archived parcels
+    const { data: archived } = await supabase
+      .from('archived_parcels')
+      .select('*')
+      .eq('warehouse_id', warehouseId)
+      .order('created_at', { ascending: false });
+
+    const activeMapped = (active || []).map((p: any) => ({
+      ...p,
+      box_name: p.boxes?.name || '',
+    }));
+
+    const allParcels = [...activeMapped, ...(archived || [])];
+    generateCsv(allParcels, `stock_complet_${currentWarehouse?.code || 'export'}_${new Date().toISOString().split('T')[0]}.csv`);
+  };
+
+  if (showAll) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Contrôle de stock</h1>
+        <Card className="glass-card">
+          <CardContent className="p-8 text-center">
+            <p className="text-muted-foreground">Veuillez sélectionner un dépôt spécifique pour le contrôle de stock.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -127,25 +173,28 @@ const StockControl: React.FC = () => {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="glass-card">
-          <CardContent className="p-4">
-            <Button variant="destructive" onClick={clearAllStock} className="w-full">
-              <Archive className="w-4 h-4 mr-1" /> Vider tout le stock
-            </Button>
-            <p className="text-xs text-muted-foreground mt-2 text-center">Archive tous les colis du dépôt</p>
-          </CardContent>
-        </Card>
+      <Card className="glass-card">
+        <CardContent className="p-4">
+          <Button variant="destructive" onClick={clearAllStock} className="w-full">
+            <Archive className="w-4 h-4 mr-1" /> Vider tout le stock
+          </Button>
+          <p className="text-xs text-muted-foreground mt-2 text-center">Archive tous les colis du dépôt</p>
+        </CardContent>
+      </Card>
 
-        <Card className="glass-card">
-          <CardContent className="p-4">
-            <Button variant="outline" onClick={exportExcel} className="w-full">
-              <Download className="w-4 h-4 mr-1" /> Exporter CSV
-            </Button>
-            <p className="text-xs text-muted-foreground mt-2 text-center">Télécharger le stock en CSV</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="glass-card">
+        <CardHeader>
+          <CardTitle className="text-lg">Exporter</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Button variant="outline" onClick={exportActive} className="w-full">
+            <Download className="w-4 h-4 mr-1" /> Exporter stock actif (CSV)
+          </Button>
+          <Button variant="outline" onClick={exportAll} className="w-full">
+            <Download className="w-4 h-4 mr-1" /> Exporter tout (actif + archivé) (CSV)
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 };
