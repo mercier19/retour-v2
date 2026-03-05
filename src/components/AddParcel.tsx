@@ -104,7 +104,7 @@ const AddParcel: React.FC = () => {
       warehouse_id: warehouseId,
       tracking: t,
       box_id: boxId || null,
-      boutique: parts[1]?.trim() || boutique.trim() || null,
+      boutique: parts[1]?.trim() || null,
     });
 
     if (error) {
