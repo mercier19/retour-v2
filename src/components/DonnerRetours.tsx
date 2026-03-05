@@ -183,30 +183,57 @@ const DonnerRetours: React.FC = () => {
         <CardContent className="p-4">
           <div className="flex gap-2 items-center mb-3">
             <Button
-              variant={searchMode === 'tracking' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => { setSearchMode('tracking'); setSearch(''); setParcels([]); }}
-            >
-              Par tracking
-            </Button>
-            <Button
               variant={searchMode === 'boutique' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => { setSearchMode('boutique'); setSearch(''); setParcels([]); }}
+              onClick={() => { setSearchMode('boutique'); setSearch(''); setParcels([]); setSelected(new Set()); }}
             >
               Par boutique
             </Button>
+            <Button
+              variant={searchMode === 'tracking' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => { setSearchMode('tracking'); setSearch(''); setParcels([]); setSelected(new Set()); }}
+            >
+              Par tracking
+            </Button>
           </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={searchMode === 'tracking' ? 'Rechercher par tracking...' : 'Rechercher par nom de boutique...'}
-              className="pl-9"
-              autoFocus
-            />
-          </div>
+          {searchMode === 'boutique' ? (
+            <Select value={search} onValueChange={(val) => setSearch(val)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner une boutique" />
+              </SelectTrigger>
+              <SelectContent>
+                <div className="p-2">
+                  <Input
+                    placeholder="Rechercher..."
+                    value={boutiqueSearch}
+                    onChange={(e) => setBoutiqueSearch(e.target.value)}
+                    className="mb-2"
+                  />
+                </div>
+                {boutiques
+                  .filter((b) => b.toLowerCase().includes(boutiqueSearch.toLowerCase()))
+                  .slice(0, 50)
+                  .map((b) => (
+                    <SelectItem key={b} value={b}>{b}</SelectItem>
+                  ))}
+                {boutiques.filter((b) => b.toLowerCase().includes(boutiqueSearch.toLowerCase())).length === 0 && (
+                  <p className="text-xs text-muted-foreground p-2 text-center">Aucune boutique trouvée</p>
+                )}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher par tracking..."
+                className="pl-9"
+                autoFocus
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 
