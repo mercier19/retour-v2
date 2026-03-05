@@ -4,31 +4,100 @@ import { useWarehouseFilter } from '@/hooks/useWarehouseFilter';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Search } from 'lucide-react';
-import { Parcel } from '@/types/database';
+
+interface ParcelResult {
+  id: string;
+  tracking: string;
+  boutique: string | null;
+  box_name: string | null;
+  status: string | null;
+  is_missing: boolean | null;
+}
+
+interface StatusLog {
+  id: string;
+  status: string;
+  created_at: string;
+  changed_by_name: string | null;
+}
+
+const statusLabel = (s: string) => {
+  switch (s) {
+    case 'in_stock': return 'En stock';
+    case 'given': return 'Donné';
+    default: return s;
+  }
+};
 
 const SearchParcels: React.FC = () => {
-  const { warehouseId } = useWarehouseFilter();
+  const { warehouseId, warehouseIds, showAll } = useWarehouseFilter();
   const [search, setSearch] = useState('');
-  const [results, setResults] = useState<Parcel[]>([]);
+  const [results, setResults] = useState<ParcelResult[]>([]);
+  const [selectedParcel, setSelectedParcel] = useState<ParcelResult | null>(null);
+  const [logs, setLogs] = useState<StatusLog[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
 
   useEffect(() => {
-    if (!warehouseId || !search.trim()) { setResults([]); return; }
+    if ((!warehouseId && !showAll) || !search.trim()) { setResults([]); return; }
     const timer = setTimeout(() => doSearch(), 300);
     return () => clearTimeout(timer);
-  }, [search, warehouseId]);
+  }, [search, warehouseId, showAll]);
 
   const doSearch = async () => {
-    if (!warehouseId || !search.trim()) return;
+    if ((!warehouseId && !showAll) || !search.trim()) return;
     const s = search.trim();
-    const { data } = await supabase
+    let query = supabase
       .from('parcels')
-      .select('*')
-      .eq('warehouse_id', warehouseId)
-      .or(`tracking.ilike.%${s}%,boutique.ilike.%${s}%,wilaya.ilike.%${s}%`)
+      .select('id, tracking, boutique, status, is_missing, boxes(name)')
+      .or(`tracking.ilike.%${s}%,boutique.ilike.%${s}%`)
       .limit(50);
-    setResults((data as Parcel[]) || []);
+
+    if (showAll) {
+      query = query.in('warehouse_id', warehouseIds);
+    } else {
+      query = query.eq('warehouse_id', warehouseId!);
+    }
+
+    const { data } = await query;
+    setResults(
+      (data || []).map((p: any) => ({
+        id: p.id,
+        tracking: p.tracking,
+        boutique: p.boutique,
+        box_name: p.boxes?.name || null,
+        status: p.status,
+        is_missing: p.is_missing,
+      }))
+    );
   };
+
+  const openHistory = async (parcel: ParcelResult) => {
+    setSelectedParcel(parcel);
+    setLogsLoading(true);
+    const { data } = await supabase
+      .from('parcel_status_log')
+      .select('id, status, created_at, profiles:changed_by(full_name)')
+      .eq('parcel_id', parcel.id)
+      .order('created_at', { ascending: true });
+
+    setLogs(
+      (data || []).map((l: any) => ({
+        id: l.id,
+        status: l.status,
+        created_at: l.created_at,
+        changed_by_name: l.profiles?.full_name || null,
+      }))
+    );
+    setLogsLoading(false);
+  };
+
+  const formatDate = (dateStr: string) =>
+    new Date(dateStr).toLocaleDateString('fr-FR', {
+      day: '2-digit', month: '2-digit', year: '2-digit',
+      hour: '2-digit', minute: '2-digit',
+    });
 
   return (
     <div className="space-y-6">
@@ -38,24 +107,31 @@ const SearchParcels: React.FC = () => {
         <Input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Tracking, boutique ou wilaya..."
+          placeholder="Tracking ou boutique..."
           className="pl-10 h-12 text-lg"
         />
       </div>
 
       <div className="space-y-2">
         {results.map((p) => (
-          <Card key={p.id} className={`glass-card ${p.is_missing ? 'border-destructive/50' : ''}`}>
+          <Card
+            key={p.id}
+            className={`glass-card cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all ${p.is_missing ? 'border-destructive/50' : ''}`}
+            onClick={() => openHistory(p)}
+          >
             <CardContent className="p-3">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-mono text-sm font-medium">{p.tracking}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{[p.boutique, p.wilaya, p.commune].filter(Boolean).join(' · ')}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="font-mono text-sm font-medium truncate">{p.tracking}</p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                    {p.boutique && <span className="font-medium text-foreground/80">{p.boutique}</span>}
+                    {p.box_name && <span>📦 {p.box_name}</span>}
+                  </div>
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 shrink-0 ml-2">
                   {p.is_missing && <Badge variant="destructive">Manquant</Badge>}
                   <Badge variant={p.status === 'given' ? 'secondary' : 'default'}>
-                    {p.status === 'given' ? 'Donné' : 'En stock'}
+                    {statusLabel(p.status || 'in_stock')}
                   </Badge>
                 </div>
               </div>
@@ -66,6 +142,53 @@ const SearchParcels: React.FC = () => {
           <p className="text-muted-foreground text-center py-8">Aucun résultat</p>
         )}
       </div>
+
+      {/* History Dialog */}
+      <Dialog open={!!selectedParcel} onOpenChange={(open) => !open && setSelectedParcel(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-mono text-sm">{selectedParcel?.tracking}</DialogTitle>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+              {selectedParcel?.boutique && <span>{selectedParcel.boutique}</span>}
+              {selectedParcel?.box_name && <span>📦 {selectedParcel.box_name}</span>}
+            </div>
+          </DialogHeader>
+
+          <div className="mt-4">
+            <h4 className="text-sm font-semibold mb-3">Historique des statuts</h4>
+            {logsLoading ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Chargement...</p>
+            ) : logs.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Aucun historique disponible</p>
+            ) : (
+              <div className="relative space-y-0">
+                {/* Timeline line */}
+                <div className="absolute left-[7px] top-2 bottom-2 w-px bg-border" />
+                {logs.map((log, i) => (
+                  <div key={log.id} className="relative flex items-start gap-3 pb-4">
+                    <div className={`relative z-10 w-[15px] h-[15px] rounded-full border-2 mt-0.5 shrink-0 ${
+                      i === logs.length - 1
+                        ? 'bg-primary border-primary'
+                        : 'bg-background border-muted-foreground/40'
+                    }`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Badge variant={log.status === 'given' ? 'secondary' : 'default'} className="text-xs">
+                          {statusLabel(log.status)}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                        <span>🕐 {formatDate(log.created_at)}</span>
+                        {log.changed_by_name && <span>👤 {log.changed_by_name}</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
