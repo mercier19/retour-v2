@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
 import { toast } from 'sonner';
-import { Search, AlertTriangle, HandCoins, CheckSquare, XSquare } from 'lucide-react';
+import { Search, AlertTriangle, HandCoins, CheckSquare, XSquare, ChevronsUpDown, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ParcelWithDetails {
   id: string;
@@ -31,8 +33,7 @@ const DonnerRetours: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [searchMode, setSearchMode] = useState<'tracking' | 'boutique'>('boutique');
   const [boutiques, setBoutiques] = useState<string[]>([]);
-  const [boutiqueSearch, setBoutiqueSearch] = useState('');
-
+  const [open, setOpen] = useState(false);
   const loadParcels = async (query: string) => {
     if ((!warehouseId && !showAll) || !query.trim()) {
       setParcels([]);
@@ -198,30 +199,34 @@ const DonnerRetours: React.FC = () => {
             </Button>
           </div>
           {searchMode === 'boutique' ? (
-            <Select value={search} onValueChange={(val) => setSearch(val)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner une boutique" />
-              </SelectTrigger>
-              <SelectContent>
-                <div className="p-2">
-                  <Input
-                    placeholder="Rechercher..."
-                    value={boutiqueSearch}
-                    onChange={(e) => setBoutiqueSearch(e.target.value)}
-                    className="mb-2"
-                  />
-                </div>
-                {boutiques
-                  .filter((b) => b.toLowerCase().includes(boutiqueSearch.toLowerCase()))
-                  .slice(0, 50)
-                  .map((b) => (
-                    <SelectItem key={b} value={b}>{b}</SelectItem>
-                  ))}
-                {boutiques.filter((b) => b.toLowerCase().includes(boutiqueSearch.toLowerCase())).length === 0 && (
-                  <p className="text-xs text-muted-foreground p-2 text-center">Aucune boutique trouvée</p>
-                )}
-              </SelectContent>
-            </Select>
+            <Popover open={open} onOpenChange={setOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" role="combobox" aria-expanded={open} className="w-full justify-between">
+                  {search || "Sélectionner une boutique..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Rechercher une boutique..." />
+                  <CommandList>
+                    <CommandEmpty>Aucune boutique trouvée.</CommandEmpty>
+                    <CommandGroup>
+                      {boutiques.map((b) => (
+                        <CommandItem
+                          key={b}
+                          value={b}
+                          onSelect={() => { setSearch(b); setOpen(false); }}
+                        >
+                          <Check className={cn("mr-2 h-4 w-4", search === b ? "opacity-100" : "opacity-0")} />
+                          {b}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           ) : (
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
