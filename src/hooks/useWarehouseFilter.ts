@@ -3,10 +3,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AppRole } from '@/types/database';
 
 export const useWarehouseFilter = () => {
-  const { currentWarehouse } = useWarehouse();
+  const { currentWarehouse, showAll, allWarehouseIds } = useWarehouse();
   const { profile } = useAuth();
 
-  const warehouseId = currentWarehouse?.id || null;
+  const warehouseId = showAll ? null : (currentWarehouse?.id || null);
+  const warehouseIds = showAll ? allWarehouseIds : (currentWarehouse ? [currentWarehouse.id] : []);
 
   const hasRole = (...roles: AppRole[]) => {
     return profile?.role ? roles.includes(profile.role) : false;
@@ -18,6 +19,8 @@ export const useWarehouseFilter = () => {
 
   return {
     warehouseId,
+    warehouseIds,
+    showAll,
     currentWarehouse,
     profile,
     hasRole,
