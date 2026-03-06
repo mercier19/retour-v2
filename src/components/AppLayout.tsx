@@ -28,6 +28,7 @@ import {
   LogOut,
   Menu,
   X,
+  ArrowRightLeft,
 } from 'lucide-react';
 
 type Page = 'dashboard' | 'add' | 'boxes' | 'retours' | 'stock' | 'stats' | 'search' | 'transfer' | 'users' | 'warehouses';
