@@ -10,6 +10,7 @@ import DonnerRetours from '@/components/DonnerRetours';
 import StockControl from '@/components/StockControl';
 import Statistics from '@/components/Statistics';
 import SearchParcels from '@/components/SearchParcels';
+import TransferParcels from '@/components/TransferParcels';
 import Users from '@/components/admin/Users';
 import Warehouses from '@/components/admin/Warehouses';
 import { Button } from '@/components/ui/button';
@@ -27,9 +28,10 @@ import {
   LogOut,
   Menu,
   X,
+  ArrowRightLeft,
 } from 'lucide-react';
 
-type Page = 'dashboard' | 'add' | 'boxes' | 'retours' | 'stock' | 'stats' | 'search' | 'users' | 'warehouses';
+type Page = 'dashboard' | 'add' | 'boxes' | 'retours' | 'stock' | 'stats' | 'search' | 'transfer' | 'users' | 'warehouses';
 
 const AppLayout: React.FC = () => {
   const { profile, signOut } = useAuth();
@@ -58,6 +60,7 @@ const AppLayout: React.FC = () => {
     { id: 'stock', label: 'Contrôle stock', icon: PackageCheck, show: canManageStock },
     { id: 'stats', label: 'Statistiques', icon: BarChart3, show: true },
     { id: 'search', label: 'Rechercher', icon: Search, show: true },
+    { id: 'transfer', label: 'Transférer', icon: ArrowRightLeft, show: true },
     { id: 'users', label: 'Utilisateurs', icon: UsersIcon, show: isAdmin },
     { id: 'warehouses', label: 'Dépôts', icon: Building2, show: isAdmin },
   ];
@@ -71,6 +74,7 @@ const AppLayout: React.FC = () => {
       case 'stock': return canManageStock ? <StockControl /> : null;
       case 'stats': return <Statistics />;
       case 'search': return <SearchParcels />;
+      case 'transfer': return <TransferParcels />;
       case 'users': return isAdmin ? <Users /> : null;
       case 'warehouses': return isAdmin ? <Warehouses /> : null;
       default: return <Dashboard />;
