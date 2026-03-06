@@ -97,6 +97,7 @@ const AddParcel: React.FC = () => {
       if (showAll) toast.error('Veuillez sélectionner un dépôt spécifique');
       return;
     }
+    // QR format: wilaya, tracking, commune, boutique, boutique_id, centre_retour, sd_hd, agence_dest, phone
     const parts = qrInput.split(',');
     const t = parts[1]?.trim();
     if (!t) { toast.error('Format QR invalide'); return; }
@@ -108,6 +109,9 @@ const AddParcel: React.FC = () => {
       tracking: t,
       box_id: boxId || null,
       boutique: parts[3]?.trim() || null,
+      wilaya: parts[0]?.trim() || null,
+      commune: parts[2]?.trim() || null,
+      phone: parts[8]?.trim() || null,
       added_by: user?.id || null,
     });
 

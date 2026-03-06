@@ -22,6 +22,7 @@ export type Database = {
           commune: string | null
           created_at: string | null
           id: string
+          phone: string | null
           status: string | null
           tracking: string
           warehouse_id: string
@@ -34,6 +35,7 @@ export type Database = {
           commune?: string | null
           created_at?: string | null
           id?: string
+          phone?: string | null
           status?: string | null
           tracking: string
           warehouse_id: string
@@ -46,6 +48,7 @@ export type Database = {
           commune?: string | null
           created_at?: string | null
           id?: string
+          phone?: string | null
           status?: string | null
           tracking?: string
           warehouse_id?: string
@@ -100,6 +103,7 @@ export type Database = {
           id: string
           parcel_id: string
           status: string
+          warehouse_id: string | null
         }
         Insert: {
           changed_by?: string | null
@@ -107,6 +111,7 @@ export type Database = {
           id?: string
           parcel_id: string
           status: string
+          warehouse_id?: string | null
         }
         Update: {
           changed_by?: string | null
@@ -114,6 +119,7 @@ export type Database = {
           id?: string
           parcel_id?: string
           status?: string
+          warehouse_id?: string | null
         }
         Relationships: [
           {
@@ -130,6 +136,13 @@ export type Database = {
             referencedRelation: "parcels"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "parcel_status_log_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
         ]
       }
       parcels: {
@@ -142,6 +155,7 @@ export type Database = {
           given_at: string | null
           id: string
           is_missing: boolean | null
+          phone: string | null
           status: string | null
           tracking: string
           updated_at: string
@@ -157,6 +171,7 @@ export type Database = {
           given_at?: string | null
           id?: string
           is_missing?: boolean | null
+          phone?: string | null
           status?: string | null
           tracking: string
           updated_at?: string
@@ -172,6 +187,7 @@ export type Database = {
           given_at?: string | null
           id?: string
           is_missing?: boolean | null
+          phone?: string | null
           status?: string | null
           tracking?: string
           updated_at?: string

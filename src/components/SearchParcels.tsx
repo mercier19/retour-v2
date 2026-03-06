@@ -4,8 +4,9 @@ import { useWarehouseFilter } from '@/hooks/useWarehouseFilter';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search } from 'lucide-react';
+import { Search, AlertTriangle } from 'lucide-react';
 
 interface ParcelResult {
   id: string;
@@ -21,6 +22,7 @@ interface StatusLog {
   status: string;
   created_at: string;
   changed_by_name: string | null;
+  warehouse_name: string | null;
 }
 
 const statusLabel = (s: string) => {
@@ -38,12 +40,19 @@ const SearchParcels: React.FC = () => {
   const [selectedParcel, setSelectedParcel] = useState<ParcelResult | null>(null);
   const [logs, setLogs] = useState<StatusLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
+  const [showMissing, setShowMissing] = useState(false);
+  const [missingParcels, setMissingParcels] = useState<ParcelResult[]>([]);
+  const [missingLoading, setMissingLoading] = useState(false);
 
   useEffect(() => {
     if ((!warehouseId && !showAll) || !search.trim()) { setResults([]); return; }
     const timer = setTimeout(() => doSearch(), 300);
     return () => clearTimeout(timer);
   }, [search, warehouseId, showAll]);
+
+  useEffect(() => {
+    if (showMissing) loadMissingParcels();
+  }, [showMissing, warehouseId, showAll]);
 
   const doSearch = async () => {
     if ((!warehouseId && !showAll) || !search.trim()) return;
@@ -73,12 +82,42 @@ const SearchParcels: React.FC = () => {
     );
   };
 
+  const loadMissingParcels = async () => {
+    if (!warehouseId && !showAll) return;
+    setMissingLoading(true);
+    let query = supabase
+      .from('parcels')
+      .select('id, tracking, boutique, status, is_missing, boxes(name)')
+      .eq('is_missing', true)
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    if (showAll) {
+      query = query.in('warehouse_id', warehouseIds);
+    } else {
+      query = query.eq('warehouse_id', warehouseId!);
+    }
+
+    const { data } = await query;
+    setMissingParcels(
+      (data || []).map((p: any) => ({
+        id: p.id,
+        tracking: p.tracking,
+        boutique: p.boutique,
+        box_name: p.boxes?.name || null,
+        status: p.status,
+        is_missing: p.is_missing,
+      }))
+    );
+    setMissingLoading(false);
+  };
+
   const openHistory = async (parcel: ParcelResult) => {
     setSelectedParcel(parcel);
     setLogsLoading(true);
     const { data } = await supabase
       .from('parcel_status_log')
-      .select('id, status, created_at, profiles:changed_by(full_name)')
+      .select('id, status, created_at, profiles:changed_by(full_name), warehouses:warehouse_id(name)')
       .eq('parcel_id', parcel.id)
       .order('created_at', { ascending: true });
 
@@ -88,6 +127,7 @@ const SearchParcels: React.FC = () => {
         status: l.status,
         created_at: l.created_at,
         changed_by_name: l.profiles?.full_name || null,
+        warehouse_name: l.warehouses?.name || null,
       }))
     );
     setLogsLoading(false);
@@ -99,21 +139,40 @@ const SearchParcels: React.FC = () => {
       hour: '2-digit', minute: '2-digit',
     });
 
+  const displayList = showMissing ? missingParcels : results;
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Rechercher</h1>
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Tracking ou boutique..."
-          className="pl-10 h-12 text-lg"
-        />
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <h1 className="text-2xl font-bold">Rechercher</h1>
+        <Button
+          variant={showMissing ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setShowMissing(!showMissing)}
+        >
+          <AlertTriangle className="w-4 h-4 mr-1" />
+          Manquants {showMissing && missingParcels.length > 0 ? `(${missingParcels.length})` : ''}
+        </Button>
       </div>
 
+      {!showMissing && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tracking ou boutique..."
+            className="pl-10 h-12 text-lg"
+          />
+        </div>
+      )}
+
+      {showMissing && missingLoading && (
+        <p className="text-muted-foreground text-center py-4">Chargement...</p>
+      )}
+
       <div className="space-y-2">
-        {results.map((p) => (
+        {displayList.map((p) => (
           <Card
             key={p.id}
             className={`glass-card cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all ${p.is_missing ? 'border-destructive/50' : ''}`}
@@ -138,8 +197,11 @@ const SearchParcels: React.FC = () => {
             </CardContent>
           </Card>
         ))}
-        {search && results.length === 0 && (
+        {!showMissing && search && results.length === 0 && (
           <p className="text-muted-foreground text-center py-8">Aucun résultat</p>
+        )}
+        {showMissing && !missingLoading && missingParcels.length === 0 && (
+          <p className="text-muted-foreground text-center py-8">Aucun colis manquant</p>
         )}
       </div>
 
@@ -177,8 +239,9 @@ const SearchParcels: React.FC = () => {
                           {statusLabel(log.status)}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
                         <span>🕐 {formatDate(log.created_at)}</span>
+                        {log.warehouse_name && <span>📍 {log.warehouse_name}</span>}
                         {log.changed_by_name && <span>👤 {log.changed_by_name}</span>}
                       </div>
                     </div>
