@@ -59,6 +59,7 @@ const AppLayout: React.FC = () => {
     { id: 'stock', label: 'Contrôle stock', icon: PackageCheck, show: canManageStock },
     { id: 'stats', label: 'Statistiques', icon: BarChart3, show: true },
     { id: 'search', label: 'Rechercher', icon: Search, show: true },
+    { id: 'transfer', label: 'Transférer', icon: ArrowRightLeft, show: true },
     { id: 'users', label: 'Utilisateurs', icon: UsersIcon, show: isAdmin },
     { id: 'warehouses', label: 'Dépôts', icon: Building2, show: isAdmin },
   ];
