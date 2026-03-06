@@ -26,11 +26,12 @@ interface StatusLog {
 }
 
 const statusLabel = (s: string) => {
-  switch (s) {
-    case 'in_stock': return 'En stock';
-    case 'given': return 'Donné';
-    default: return s;
-  }
+  if (s === 'in_stock') return 'En stock';
+  if (s === 'given') return 'Donné';
+  if (s === 'missing') return 'Manquant';
+  if (s === 'found') return 'Trouvé';
+  if (s.startsWith('Transfert vers')) return s;
+  return s;
 };
 
 const SearchParcels: React.FC = () => {
