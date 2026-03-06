@@ -74,6 +74,7 @@ const AppLayout: React.FC = () => {
       case 'stock': return canManageStock ? <StockControl /> : null;
       case 'stats': return <Statistics />;
       case 'search': return <SearchParcels />;
+      case 'transfer': return <TransferParcels />;
       case 'users': return isAdmin ? <Users /> : null;
       case 'warehouses': return isAdmin ? <Warehouses /> : null;
       default: return <Dashboard />;
