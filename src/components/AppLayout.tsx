@@ -10,6 +10,7 @@ import DonnerRetours from '@/components/DonnerRetours';
 import StockControl from '@/components/StockControl';
 import Statistics from '@/components/Statistics';
 import SearchParcels from '@/components/SearchParcels';
+import TransferParcels from '@/components/TransferParcels';
 import Users from '@/components/admin/Users';
 import Warehouses from '@/components/admin/Warehouses';
 import { Button } from '@/components/ui/button';
