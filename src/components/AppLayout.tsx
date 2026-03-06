@@ -30,7 +30,7 @@ import {
   X,
 } from 'lucide-react';
 
-type Page = 'dashboard' | 'add' | 'boxes' | 'retours' | 'stock' | 'stats' | 'search' | 'users' | 'warehouses';
+type Page = 'dashboard' | 'add' | 'boxes' | 'retours' | 'stock' | 'stats' | 'search' | 'transfer' | 'users' | 'warehouses';
 
 const AppLayout: React.FC = () => {
   const { profile, signOut } = useAuth();
