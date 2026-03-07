@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { Plus, QrCode } from 'lucide-react';
 import { Box } from '@/types/database';
@@ -21,6 +23,15 @@ const AddParcel: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'manual' | 'qr'>('qr');
   const [qrInput, setQrInput] = useState('');
+
+  // Multi-part state
+  const [isMultiPart, setIsMultiPart] = useState(false);
+  const [totalParts, setTotalParts] = useState(2);
+
+  // Dialog for QR multi-part prompt
+  const [multiPartDialog, setMultiPartDialog] = useState(false);
+  const [pendingInsert, setPendingInsert] = useState<any>(null);
+  const [dialogTotalParts, setDialogTotalParts] = useState(2);
 
   useEffect(() => {
     if (warehouseId) loadBoxes();
@@ -38,13 +49,10 @@ const AddParcel: React.FC = () => {
   };
 
   const loadBoutiques = async () => {
-    // Get unique boutiques from active parcels
     const { data: activeParcels } = await supabase
       .from('parcels')
       .select('boutique')
       .not('boutique', 'is', null);
-    
-    // Get unique boutiques from archived parcels
     const { data: archivedParcels } = await supabase
       .from('archived_parcels')
       .select('boutique')
@@ -60,6 +68,82 @@ const AddParcel: React.FC = () => {
     b.toLowerCase().includes(boutiqueSearch.toLowerCase())
   );
 
+  const insertParcel = async (parcelData: any) => {
+    const { error } = await supabase.from('parcels').insert(parcelData);
+    return error;
+  };
+
+  const handleDuplicate = async (parcelData: any) => {
+    // Check if existing parcel with this tracking is multi-part
+    const { data: existing } = await supabase
+      .from('parcels')
+      .select('is_multi_part, part_number, total_parts')
+      .eq('warehouse_id', parcelData.warehouse_id)
+      .eq('tracking', parcelData.tracking)
+      .order('part_number', { ascending: false })
+      .limit(1);
+
+    if (!existing || existing.length === 0) {
+      toast.error('Ce tracking existe déjà dans ce dépôt');
+      return;
+    }
+
+    const latest = existing[0];
+
+    if (latest.is_multi_part) {
+      const nextPart = latest.part_number + 1;
+      if (nextPart > latest.total_parts) {
+        toast.warning(`Toutes les ${latest.total_parts} parties de ce tracking ont déjà été reçues`);
+        return;
+      }
+      const error = await insertParcel({
+        ...parcelData,
+        is_multi_part: true,
+        part_number: nextPart,
+        total_parts: latest.total_parts,
+      });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success(`Partie ${nextPart}/${latest.total_parts} ajoutée pour ${parcelData.tracking}`);
+      }
+    } else {
+      // Not multi-part yet — prompt user
+      setPendingInsert(parcelData);
+      setDialogTotalParts(2);
+      setMultiPartDialog(true);
+    }
+  };
+
+  const confirmConvertToMultiPart = async () => {
+    if (!pendingInsert) return;
+    setMultiPartDialog(false);
+    setLoading(true);
+
+    // Convert existing parcel to multi-part
+    await supabase
+      .from('parcels')
+      .update({ is_multi_part: true, part_number: 1, total_parts: dialogTotalParts })
+      .eq('warehouse_id', pendingInsert.warehouse_id)
+      .eq('tracking', pendingInsert.tracking);
+
+    // Insert part 2
+    const error = await insertParcel({
+      ...pendingInsert,
+      is_multi_part: true,
+      part_number: 2,
+      total_parts: dialogTotalParts,
+    });
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success(`Converti en multi-parties (${dialogTotalParts}). Partie 2/${dialogTotalParts} ajoutée.`);
+    }
+    setPendingInsert(null);
+    setLoading(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!warehouseId || !tracking.trim()) {
@@ -69,22 +153,29 @@ const AddParcel: React.FC = () => {
 
     const { data: { user } } = await supabase.auth.getUser();
     setLoading(true);
-    const { error } = await supabase.from('parcels').insert({
+
+    const parcelData: any = {
       warehouse_id: warehouseId,
       tracking: tracking.trim(),
       box_id: boxId || null,
       boutique: boutique.trim() || null,
       added_by: user?.id || null,
-    });
+      is_multi_part: isMultiPart,
+      part_number: 1,
+      total_parts: isMultiPart ? totalParts : 1,
+    };
+
+    const error = await insertParcel(parcelData);
 
     if (error) {
       if (error.code === '23505') {
-        toast.error('Ce tracking existe déjà dans ce dépôt');
+        await handleDuplicate(parcelData);
       } else {
         toast.error('Erreur: ' + error.message);
       }
     } else {
-      toast.success('Colis ajouté avec succès');
+      const msg = isMultiPart ? `Partie 1/${totalParts} ajoutée` : 'Colis ajouté avec succès';
+      toast.success(msg);
       setTracking('');
       setBoutique('');
       setBoutiqueSearch('');
@@ -97,14 +188,14 @@ const AddParcel: React.FC = () => {
       if (showAll) toast.error('Veuillez sélectionner un dépôt spécifique');
       return;
     }
-    // QR format: wilaya, tracking, commune, boutique, boutique_id, centre_retour, sd_hd, agence_dest, phone
     const parts = qrInput.split(',');
     const t = parts[1]?.trim();
     if (!t) { toast.error('Format QR invalide'); return; }
 
     const { data: { user } } = await supabase.auth.getUser();
     setLoading(true);
-    const { error } = await supabase.from('parcels').insert({
+
+    const parcelData: any = {
       warehouse_id: warehouseId,
       tracking: t,
       box_id: boxId || null,
@@ -113,10 +204,16 @@ const AddParcel: React.FC = () => {
       commune: parts[2]?.trim() || null,
       phone: parts[8]?.trim() || null,
       added_by: user?.id || null,
-    });
+    };
+
+    const error = await insertParcel(parcelData);
 
     if (error) {
-      toast.error(error.code === '23505' ? 'Tracking déjà existant' : error.message);
+      if (error.code === '23505') {
+        await handleDuplicate(parcelData);
+      } else {
+        toast.error(error.message);
+      }
     } else {
       toast.success(`Colis ${t} ajouté`);
     }
@@ -207,6 +304,33 @@ const AddParcel: React.FC = () => {
             </div>
           )}
 
+          {/* Multi-part checkbox - manual mode only */}
+          {mode === 'manual' && (
+            <div className="mb-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="multipart"
+                  checked={isMultiPart}
+                  onCheckedChange={(c) => setIsMultiPart(!!c)}
+                />
+                <Label htmlFor="multipart" className="cursor-pointer">Ce colis a plusieurs parties</Label>
+              </div>
+              {isMultiPart && (
+                <div className="ml-6">
+                  <Label>Nombre total de parties</Label>
+                  <Input
+                    type="number"
+                    min={2}
+                    max={99}
+                    value={totalParts}
+                    onChange={(e) => setTotalParts(Math.max(2, parseInt(e.target.value) || 2))}
+                    className="w-24"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
           {mode === 'manual' ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -236,6 +360,38 @@ const AddParcel: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Multi-part prompt dialog (for QR duplicate detection) */}
+      <Dialog open={multiPartDialog} onOpenChange={setMultiPartDialog}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Ce tracking a plusieurs parties ?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Le tracking <span className="font-mono font-medium">{pendingInsert?.tracking}</span> existe déjà. 
+            S'il s'agit d'un colis multi-parties, indiquez le nombre total.
+          </p>
+          <div className="space-y-2">
+            <Label>Nombre total de parties</Label>
+            <Input
+              type="number"
+              min={2}
+              max={99}
+              value={dialogTotalParts}
+              onChange={(e) => setDialogTotalParts(Math.max(2, parseInt(e.target.value) || 2))}
+              className="w-24"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setMultiPartDialog(false); setPendingInsert(null); }}>
+              Annuler
+            </Button>
+            <Button onClick={confirmConvertToMultiPart}>
+              Confirmer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

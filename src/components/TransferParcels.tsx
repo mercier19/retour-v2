@@ -7,11 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Search, ArrowRightLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -30,10 +26,13 @@ interface ParcelItem {
   box_name: string | null;
   status: string | null;
   warehouse_id: string;
+  is_multi_part: boolean;
+  part_number: number;
+  total_parts: number;
 }
 
 const TransferParcels: React.FC = () => {
-  const { warehouseId, warehouseIds, showAll, currentWarehouse } = useWarehouseFilter();
+  const { warehouseId, warehouseIds, showAll } = useWarehouseFilter();
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [destinationId, setDestinationId] = useState<string>('');
   const [search, setSearch] = useState('');
@@ -41,24 +40,16 @@ const TransferParcels: React.FC = () => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [transferring, setTransferring] = useState(false);
 
-  // Load all warehouses for destination picker
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from('warehouses')
-        .select('id, name, code, type')
-        .order('name');
+      const { data } = await supabase.from('warehouses').select('id, name, code, type').order('name');
       setWarehouses(data || []);
     };
     load();
   }, []);
 
-  // Search parcels
   useEffect(() => {
-    if ((!warehouseId && !showAll) || !search.trim()) {
-      setParcels([]);
-      return;
-    }
+    if ((!warehouseId && !showAll) || !search.trim()) { setParcels([]); return; }
     const timer = setTimeout(() => doSearch(), 300);
     return () => clearTimeout(timer);
   }, [search, warehouseId, showAll]);
@@ -68,8 +59,10 @@ const TransferParcels: React.FC = () => {
     const s = search.trim();
     let query = supabase
       .from('parcels')
-      .select('id, tracking, boutique, status, warehouse_id, boxes(name)')
+      .select('id, tracking, boutique, status, warehouse_id, is_multi_part, part_number, total_parts, boxes(name)')
       .or(`tracking.ilike.%${s}%,boutique.ilike.%${s}%`)
+      .order('tracking')
+      .order('part_number')
       .limit(50);
 
     if (showAll) {
@@ -87,6 +80,9 @@ const TransferParcels: React.FC = () => {
         box_name: p.boxes?.name || null,
         status: p.status,
         warehouse_id: p.warehouse_id,
+        is_multi_part: p.is_multi_part ?? false,
+        part_number: p.part_number ?? 1,
+        total_parts: p.total_parts ?? 1,
       }))
     );
   };
@@ -94,38 +90,27 @@ const TransferParcels: React.FC = () => {
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   };
 
   const toggleAll = () => {
-    if (selected.size === parcels.length) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(parcels.map((p) => p.id)));
-    }
+    if (selected.size === parcels.length) setSelected(new Set());
+    else setSelected(new Set(parcels.map((p) => p.id)));
   };
 
   const destinationWarehouse = warehouses.find((w) => w.id === destinationId);
 
   const handleTransfer = async () => {
-    if (!destinationId || selected.size === 0) return;
-    if (!destinationWarehouse) return;
-
+    if (!destinationId || selected.size === 0 || !destinationWarehouse) return;
     setTransferring(true);
     const newStatus = `Transfert vers ${destinationWarehouse.name}`;
     const ids = Array.from(selected);
 
-    // Update status for each selected parcel
     const { error } = await supabase
       .from('parcels')
-      .update({
-        status: newStatus,
-        warehouse_id: destinationId,
-        box_id: null,
-      })
+      .update({ status: newStatus, warehouse_id: destinationId, box_id: null })
       .in('id', ids);
 
     if (error) {
@@ -138,97 +123,65 @@ const TransferParcels: React.FC = () => {
     setTransferring(false);
   };
 
-  // Filter out current warehouse from destinations
-  const destinationOptions = warehouses.filter((w) => {
-    if (showAll) return true;
-    return w.id !== warehouseId;
-  });
+  const destinationOptions = warehouses.filter((w) => showAll || w.id !== warehouseId);
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Transférer des colis</h1>
 
-      {/* Destination selector */}
       <div className="space-y-2">
         <label className="text-sm font-medium">Destination</label>
         <Select value={destinationId} onValueChange={setDestinationId}>
-          <SelectTrigger>
-            <SelectValue placeholder="Sélectionner une destination..." />
-          </SelectTrigger>
+          <SelectTrigger><SelectValue placeholder="Sélectionner une destination..." /></SelectTrigger>
           <SelectContent>
             {destinationOptions.map((w) => (
-              <SelectItem key={w.id} value={w.id}>
-                {w.name} ({w.code}) — {w.type}
-              </SelectItem>
+              <SelectItem key={w.id} value={w.id}>{w.name} ({w.code}) — {w.type}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-        <Input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Rechercher par tracking ou boutique..."
-          className="pl-10 h-12 text-lg"
-        />
+        <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher par tracking ou boutique..." className="pl-10 h-12 text-lg" />
       </div>
 
-      {/* Select all + transfer button */}
       {parcels.length > 0 && (
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            <Checkbox
-              checked={selected.size === parcels.length && parcels.length > 0}
-              onCheckedChange={toggleAll}
-            />
-            <span className="text-sm text-muted-foreground">
-              {selected.size} / {parcels.length} sélectionné(s)
-            </span>
+            <Checkbox checked={selected.size === parcels.length && parcels.length > 0} onCheckedChange={toggleAll} />
+            <span className="text-sm text-muted-foreground">{selected.size} / {parcels.length} sélectionné(s)</span>
           </div>
-          <Button
-            onClick={handleTransfer}
-            disabled={!destinationId || selected.size === 0 || transferring}
-          >
-            {transferring ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <ArrowRightLeft className="w-4 h-4 mr-2" />
-            )}
+          <Button onClick={handleTransfer} disabled={!destinationId || selected.size === 0 || transferring}>
+            {transferring ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ArrowRightLeft className="w-4 h-4 mr-2" />}
             Transférer ({selected.size})
           </Button>
         </div>
       )}
 
-      {/* Parcels list */}
       <div className="space-y-2">
         {parcels.map((p) => (
           <Card
             key={p.id}
-            className={`cursor-pointer transition-all ${
-              selected.has(p.id) ? 'ring-2 ring-primary' : 'hover:ring-1 hover:ring-primary/30'
-            }`}
+            className={`cursor-pointer transition-all ${selected.has(p.id) ? 'ring-2 ring-primary' : 'hover:ring-1 hover:ring-primary/30'}`}
             onClick={() => toggleSelect(p.id)}
           >
             <CardContent className="p-3">
               <div className="flex items-center gap-3">
-                <Checkbox
-                  checked={selected.has(p.id)}
-                  onCheckedChange={() => toggleSelect(p.id)}
-                  onClick={(e) => e.stopPropagation()}
-                />
+                <Checkbox checked={selected.has(p.id)} onCheckedChange={() => toggleSelect(p.id)} onClick={(e) => e.stopPropagation()} />
                 <div className="flex-1 min-w-0">
-                  <p className="font-mono text-sm font-medium truncate">{p.tracking}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-mono text-sm font-medium truncate">{p.tracking}</p>
+                    {p.is_multi_part && (
+                      <Badge variant="outline" className="text-xs font-mono">{p.part_number}/{p.total_parts}</Badge>
+                    )}
+                  </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                     {p.boutique && <span className="font-medium text-foreground/80">{p.boutique}</span>}
                     {p.box_name && <span>📦 {p.box_name}</span>}
                   </div>
                 </div>
-                <Badge variant="outline" className="shrink-0">
-                  {p.status || 'in_stock'}
-                </Badge>
+                <Badge variant="outline" className="shrink-0">{p.status || 'in_stock'}</Badge>
               </div>
             </CardContent>
           </Card>
