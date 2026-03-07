@@ -40,6 +40,9 @@ const StockControl: React.FC = () => {
           commune: p.commune,
           status: p.status,
           created_at: p.created_at,
+          is_multi_part: p.is_multi_part ?? false,
+          part_number: p.part_number ?? 1,
+          total_parts: p.total_parts ?? 1,
         }))
       );
       await supabase.from('parcels').delete().eq('box_id', selectedBox);
