@@ -173,7 +173,7 @@ const DonnerRetours: React.FC = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h1 className="text-2xl font-bold"> Remmetre des retours</h1>
+        <h1 className="text-2xl font-bold"> Remettre des retours</h1>
         {selected.size > 0 &&
         <Button onClick={markGiven}>
             <HandCoins className="w-4 h-4 mr-1" /> Donner ({selected.size})
