@@ -15,6 +15,9 @@ interface ParcelResult {
   box_name: string | null;
   status: string | null;
   is_missing: boolean | null;
+  is_multi_part: boolean;
+  part_number: number;
+  total_parts: number;
 }
 
 interface StatusLog {
@@ -55,13 +58,27 @@ const SearchParcels: React.FC = () => {
     if (showMissing) loadMissingParcels();
   }, [showMissing, warehouseId, showAll]);
 
+  const mapParcel = (p: any): ParcelResult => ({
+    id: p.id,
+    tracking: p.tracking,
+    boutique: p.boutique,
+    box_name: p.boxes?.name || null,
+    status: p.status,
+    is_missing: p.is_missing,
+    is_multi_part: p.is_multi_part ?? false,
+    part_number: p.part_number ?? 1,
+    total_parts: p.total_parts ?? 1,
+  });
+
   const doSearch = async () => {
     if ((!warehouseId && !showAll) || !search.trim()) return;
     const s = search.trim();
     let query = supabase
       .from('parcels')
-      .select('id, tracking, boutique, status, is_missing, boxes(name)')
+      .select('id, tracking, boutique, status, is_missing, is_multi_part, part_number, total_parts, boxes(name)')
       .or(`tracking.ilike.%${s}%,boutique.ilike.%${s}%`)
+      .order('tracking')
+      .order('part_number')
       .limit(50);
 
     if (showAll) {
@@ -71,16 +88,7 @@ const SearchParcels: React.FC = () => {
     }
 
     const { data } = await query;
-    setResults(
-      (data || []).map((p: any) => ({
-        id: p.id,
-        tracking: p.tracking,
-        boutique: p.boutique,
-        box_name: p.boxes?.name || null,
-        status: p.status,
-        is_missing: p.is_missing,
-      }))
-    );
+    setResults((data || []).map(mapParcel));
   };
 
   const loadMissingParcels = async () => {
@@ -88,9 +96,10 @@ const SearchParcels: React.FC = () => {
     setMissingLoading(true);
     let query = supabase
       .from('parcels')
-      .select('id, tracking, boutique, status, is_missing, boxes(name)')
+      .select('id, tracking, boutique, status, is_missing, is_multi_part, part_number, total_parts, boxes(name)')
       .eq('is_missing', true)
-      .order('created_at', { ascending: false })
+      .order('tracking')
+      .order('part_number')
       .limit(200);
 
     if (showAll) {
@@ -100,16 +109,7 @@ const SearchParcels: React.FC = () => {
     }
 
     const { data } = await query;
-    setMissingParcels(
-      (data || []).map((p: any) => ({
-        id: p.id,
-        tracking: p.tracking,
-        boutique: p.boutique,
-        box_name: p.boxes?.name || null,
-        status: p.status,
-        is_missing: p.is_missing,
-      }))
-    );
+    setMissingParcels((data || []).map(mapParcel));
     setMissingLoading(false);
   };
 
@@ -141,6 +141,15 @@ const SearchParcels: React.FC = () => {
     });
 
   const displayList = showMissing ? missingParcels : results;
+
+  const PartBadge = ({ parcel }: { parcel: ParcelResult }) => {
+    if (!parcel.is_multi_part) return null;
+    return (
+      <Badge variant="outline" className="text-xs font-mono ml-1">
+        {parcel.part_number}/{parcel.total_parts}
+      </Badge>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -182,7 +191,10 @@ const SearchParcels: React.FC = () => {
             <CardContent className="p-3">
               <div className="flex items-center justify-between">
                 <div className="min-w-0 flex-1">
-                  <p className="font-mono text-sm font-medium truncate">{p.tracking}</p>
+                  <div className="flex items-center">
+                    <p className="font-mono text-sm font-medium truncate">{p.tracking}</p>
+                    <PartBadge parcel={p} />
+                  </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                     {p.boutique && <span className="font-medium text-foreground/80">{p.boutique}</span>}
                     {p.box_name && <span>📦 {p.box_name}</span>}
@@ -210,7 +222,14 @@ const SearchParcels: React.FC = () => {
       <Dialog open={!!selectedParcel} onOpenChange={(open) => !open && setSelectedParcel(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="font-mono text-sm">{selectedParcel?.tracking}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="font-mono text-sm">{selectedParcel?.tracking}</span>
+              {selectedParcel?.is_multi_part && (
+                <Badge variant="outline" className="text-xs font-mono">
+                  Partie {selectedParcel.part_number}/{selectedParcel.total_parts}
+                </Badge>
+              )}
+            </DialogTitle>
             <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
               {selectedParcel?.boutique && <span>{selectedParcel.boutique}</span>}
               {selectedParcel?.box_name && <span>📦 {selectedParcel.box_name}</span>}
@@ -225,7 +244,6 @@ const SearchParcels: React.FC = () => {
               <p className="text-sm text-muted-foreground text-center py-4">Aucun historique disponible</p>
             ) : (
               <div className="relative space-y-0">
-                {/* Timeline line */}
                 <div className="absolute left-[7px] top-2 bottom-2 w-px bg-border" />
                 {logs.map((log, i) => (
                   <div key={log.id} className="relative flex items-start gap-3 pb-4">

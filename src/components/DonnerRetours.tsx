@@ -4,6 +4,7 @@ import { useWarehouseFilter } from '@/hooks/useWarehouseFilter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
@@ -23,6 +24,9 @@ interface ParcelWithDetails {
   added_by_name: string | null;
   warehouse_id: string;
   status: string | null;
+  is_multi_part: boolean;
+  part_number: number;
+  total_parts: number;
 }
 
 const DonnerRetours: React.FC = () => {
@@ -34,6 +38,7 @@ const DonnerRetours: React.FC = () => {
   const [searchMode, setSearchMode] = useState<'tracking' | 'boutique'>('boutique');
   const [boutiques, setBoutiques] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
+
   const loadParcels = async (query: string) => {
     if ((!warehouseId && !showAll) || !query.trim()) {
       setParcels([]);
@@ -43,7 +48,7 @@ const DonnerRetours: React.FC = () => {
     setLoading(true);
     let dbQuery = supabase
       .from('parcels')
-      .select('id, tracking, boutique, box_id, is_missing, created_at, warehouse_id, status, added_by, boxes(name), profiles:added_by(full_name)')
+      .select('id, tracking, boutique, box_id, is_missing, created_at, warehouse_id, status, added_by, is_multi_part, part_number, total_parts, boxes(name), profiles:added_by(full_name)')
       .eq('status', 'in_stock');
 
     if (showAll) {
@@ -58,7 +63,7 @@ const DonnerRetours: React.FC = () => {
       dbQuery = dbQuery.ilike('boutique', `%${query.trim()}%`);
     }
 
-    const { data } = await dbQuery.order('created_at', { ascending: false }).limit(200);
+    const { data } = await dbQuery.order('tracking').order('part_number').limit(200);
 
     if (data) {
       setParcels(data.map((p: any) => ({
@@ -73,6 +78,9 @@ const DonnerRetours: React.FC = () => {
         added_by_name: p.profiles?.full_name || null,
         warehouse_id: p.warehouse_id,
         status: p.status,
+        is_multi_part: p.is_multi_part ?? false,
+        part_number: p.part_number ?? 1,
+        total_parts: p.total_parts ?? 1,
       })));
     }
     setLoading(false);
@@ -130,10 +138,8 @@ const DonnerRetours: React.FC = () => {
   const markGiven = async () => {
     if (selected.size === 0) return;
 
-    // Flag unselected parcels from the results as missing
     const unselectedIds = parcels.filter((p) => !selected.has(p.id)).map((p) => p.id);
     
-    // Mark selected as given
     const { error: givenError } = await supabase
       .from('parcels')
       .update({ status: 'given', given_at: new Date().toISOString() })
@@ -144,7 +150,6 @@ const DonnerRetours: React.FC = () => {
       return;
     }
 
-    // Mark unselected as missing
     if (unselectedIds.length > 0) {
       await supabase
         .from('parcels')
@@ -160,11 +165,8 @@ const DonnerRetours: React.FC = () => {
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
+      day: '2-digit', month: '2-digit', year: '2-digit',
+      hour: '2-digit', minute: '2-digit',
     });
   };
 
@@ -179,7 +181,6 @@ const DonnerRetours: React.FC = () => {
         )}
       </div>
 
-      {/* Search bar */}
       <Card className="glass-card">
         <CardContent className="p-4">
           <div className="flex gap-2 items-center mb-3">
@@ -242,7 +243,6 @@ const DonnerRetours: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Action buttons */}
       {parcels.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={selectAll}>
@@ -259,7 +259,6 @@ const DonnerRetours: React.FC = () => {
         </div>
       )}
 
-      {/* Results */}
       {loading && <p className="text-muted-foreground text-center py-4">Chargement...</p>}
 
       <div className="space-y-1">
@@ -270,6 +269,9 @@ const DonnerRetours: React.FC = () => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="font-mono text-sm font-medium truncate">{parcel.tracking}</p>
+                  {parcel.is_multi_part && (
+                    <Badge variant="outline" className="text-xs font-mono">{parcel.part_number}/{parcel.total_parts}</Badge>
+                  )}
                   {parcel.is_missing && (
                     <span className="text-xs bg-destructive/20 text-destructive px-1.5 py-0.5 rounded">manquant</span>
                   )}

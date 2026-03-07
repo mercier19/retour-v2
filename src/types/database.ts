@@ -44,6 +44,9 @@ export interface Parcel {
   added_by: string | null;
   created_at: string;
   updated_at: string;
+  is_multi_part: boolean;
+  part_number: number;
+  total_parts: number;
 }
 
 export interface ArchivedParcel {
@@ -57,4 +60,7 @@ export interface ArchivedParcel {
   status: string | null;
   archived_at: string;
   created_at: string | null;
+  is_multi_part: boolean;
+  part_number: number;
+  total_parts: number;
 }
