@@ -28,8 +28,8 @@ import {
   LogOut,
   Menu,
   X,
-  ArrowRightLeft,
-} from 'lucide-react';
+  ArrowRightLeft } from
+'lucide-react';
 
 type Page = 'dashboard' | 'add' | 'boxes' | 'retours' | 'stock' | 'stats' | 'search' | 'transfer' | 'users' | 'warehouses';
 
@@ -48,36 +48,36 @@ const AppLayout: React.FC = () => {
           <p className="text-muted-foreground">Aucun dépôt assigné. Contactez un administrateur.</p>
           <Button variant="outline" onClick={signOut}>Se déconnecter</Button>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
-  const navItems: { id: Page; label: string; icon: React.ElementType; show: boolean }[] = [
-    { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, show: true },
-    { id: 'add', label: 'Ajouter', icon: Plus, show: true },
-    { id: 'boxes', label: 'Boxes', icon: BoxIcon, show: canManageBoxes },
-    { id: 'retours', label: 'Donner retours', icon: HandCoins, show: true },
-    { id: 'stock', label: 'Contrôle stock', icon: PackageCheck, show: canManageStock },
-    { id: 'stats', label: 'Statistiques', icon: BarChart3, show: true },
-    { id: 'search', label: 'Rechercher', icon: Search, show: true },
-    { id: 'transfer', label: 'Transférer', icon: ArrowRightLeft, show: true },
-    { id: 'users', label: 'Utilisateurs', icon: UsersIcon, show: isAdmin },
-    { id: 'warehouses', label: 'Dépôts', icon: Building2, show: isAdmin },
-  ];
+  const navItems: {id: Page;label: string;icon: React.ElementType;show: boolean;}[] = [
+  { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, show: true },
+  { id: 'add', label: 'Ajouter', icon: Plus, show: true },
+  { id: 'boxes', label: 'Boxes', icon: BoxIcon, show: canManageBoxes },
+  { id: 'retours', label: 'Donner retours', icon: HandCoins, show: true },
+  { id: 'stock', label: 'Contrôle stock', icon: PackageCheck, show: canManageStock },
+  { id: 'stats', label: 'Statistiques', icon: BarChart3, show: true },
+  { id: 'search', label: 'Rechercher', icon: Search, show: true },
+  { id: 'transfer', label: 'Transférer', icon: ArrowRightLeft, show: true },
+  { id: 'users', label: 'Utilisateurs', icon: UsersIcon, show: isAdmin },
+  { id: 'warehouses', label: 'Dépôts', icon: Building2, show: isAdmin }];
+
 
   const renderPage = () => {
     switch (page) {
-      case 'dashboard': return <Dashboard />;
-      case 'add': return <AddParcel />;
-      case 'boxes': return canManageBoxes ? <Boxes /> : null;
-      case 'retours': return <DonnerRetours />;
-      case 'stock': return canManageStock ? <StockControl /> : null;
-      case 'stats': return <Statistics />;
-      case 'search': return <SearchParcels />;
-      case 'transfer': return <TransferParcels />;
-      case 'users': return isAdmin ? <Users /> : null;
-      case 'warehouses': return isAdmin ? <Warehouses /> : null;
-      default: return <Dashboard />;
+      case 'dashboard':return <Dashboard />;
+      case 'add':return <AddParcel />;
+      case 'boxes':return canManageBoxes ? <Boxes /> : null;
+      case 'retours':return <DonnerRetours />;
+      case 'stock':return canManageStock ? <StockControl /> : null;
+      case 'stats':return <Statistics />;
+      case 'search':return <SearchParcels />;
+      case 'transfer':return <TransferParcels />;
+      case 'users':return isAdmin ? <Users /> : null;
+      case 'warehouses':return isAdmin ? <Warehouses /> : null;
+      default:return <Dashboard />;
     }
   };
 
@@ -88,7 +88,7 @@ const AppLayout: React.FC = () => {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-4 flex items-center gap-3 border-b border-sidebar-border">
-            <img src={yalidinelogo} alt="Yalidine" className="h-8 brightness-0 invert" />
+            <img alt="Yalidine" className="h-8 brightness-0 invert" src="/lovable-uploads/24bc57ab-84b1-4b7c-a9a7-1ed16fe9536f.png" />
             <div className="ml-auto flex items-center gap-2">
               <p className="text-xs text-sidebar-foreground/60">{currentWarehouse.name}</p>
               <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-sidebar-foreground">
@@ -104,20 +104,20 @@ const AppLayout: React.FC = () => {
 
           {/* Nav */}
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-            {navItems.filter((item) => item.show).map((item) => (
-              <button
-                key={item.id}
-                onClick={() => { setPage(item.id); setSidebarOpen(false); }}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                  page === item.id
-                    ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
-                }`}
-              >
+            {navItems.filter((item) => item.show).map((item) =>
+            <button
+              key={item.id}
+              onClick={() => {setPage(item.id);setSidebarOpen(false);}}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+              page === item.id ?
+              'bg-sidebar-primary text-sidebar-primary-foreground' :
+              'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`
+              }>
+              
                 <item.icon className="w-4 h-4 shrink-0" />
                 {item.label}
               </button>
-            ))}
+            )}
           </nav>
 
           {/* User */}
@@ -153,8 +153,8 @@ const AppLayout: React.FC = () => {
           {renderPage()}
         </div>
       </main>
-    </div>
-  );
+    </div>);
+
 };
 
 export default AppLayout;
