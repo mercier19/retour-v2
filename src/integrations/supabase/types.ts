@@ -22,8 +22,11 @@ export type Database = {
           commune: string | null
           created_at: string | null
           id: string
+          is_multi_part: boolean
+          part_number: number
           phone: string | null
           status: string | null
+          total_parts: number
           tracking: string
           warehouse_id: string
           wilaya: string | null
@@ -35,8 +38,11 @@ export type Database = {
           commune?: string | null
           created_at?: string | null
           id?: string
+          is_multi_part?: boolean
+          part_number?: number
           phone?: string | null
           status?: string | null
+          total_parts?: number
           tracking: string
           warehouse_id: string
           wilaya?: string | null
@@ -48,8 +54,11 @@ export type Database = {
           commune?: string | null
           created_at?: string | null
           id?: string
+          is_multi_part?: boolean
+          part_number?: number
           phone?: string | null
           status?: string | null
+          total_parts?: number
           tracking?: string
           warehouse_id?: string
           wilaya?: string | null
@@ -155,8 +164,11 @@ export type Database = {
           given_at: string | null
           id: string
           is_missing: boolean | null
+          is_multi_part: boolean
+          part_number: number
           phone: string | null
           status: string | null
+          total_parts: number
           tracking: string
           updated_at: string
           warehouse_id: string
@@ -171,8 +183,11 @@ export type Database = {
           given_at?: string | null
           id?: string
           is_missing?: boolean | null
+          is_multi_part?: boolean
+          part_number?: number
           phone?: string | null
           status?: string | null
+          total_parts?: number
           tracking: string
           updated_at?: string
           warehouse_id: string
@@ -187,8 +202,11 @@ export type Database = {
           given_at?: string | null
           id?: string
           is_missing?: boolean | null
+          is_multi_part?: boolean
+          part_number?: number
           phone?: string | null
           status?: string | null
+          total_parts?: number
           tracking?: string
           updated_at?: string
           warehouse_id?: string
