@@ -10,7 +10,7 @@ import { Box } from '@/types/database';
 import { printBoxPDF } from '@/lib/box-pdf';
 
 const Boxes: React.FC = () => {
-  const { warehouseId, showAll } = useWarehouseFilter();
+  const { warehouseId, showAll, currentWarehouse } = useWarehouseFilter();
   const [boxes, setBoxes] = useState<(Box & { parcel_count: number })[]>([]);
   const [newName, setNewName] = useState('');
   const [newQuota, setNewQuota] = useState('');
