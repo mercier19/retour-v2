@@ -37,6 +37,7 @@ interface ParcelRow {
   given_at: string | null;
   box_id: string | null;
   updated_at: string;
+  delivery_type: string | null;
 }
 
 interface BoxRow {
