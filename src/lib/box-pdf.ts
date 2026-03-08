@@ -53,6 +53,7 @@ export const printBoxPDF = async ({ boxId, boxName, warehouseName }: PrintBoxOpt
     if (amiriFontLoaded && amiriFontBase64) {
       doc.addFileToVFS('Amiri-Regular.ttf', amiriFontBase64);
       doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+      doc.addFont('Amiri-Regular.ttf', 'Amiri', 'bold');
     }
 
     const today = new Date().toLocaleDateString('fr-FR', {
@@ -96,7 +97,7 @@ export const printBoxPDF = async ({ boxId, boxName, warehouseName }: PrintBoxOpt
         cellPadding: 3,
         ...(useArabicFont ? { font: 'Amiri' } : {}),
       },
-      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+      headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'normal', ...(useArabicFont ? { font: 'Amiri' } : {}) },
       alternateRowStyles: { fillColor: [245, 245, 245] },
       columnStyles: {
         2: { halign: useArabicFont ? 'right' : 'left' }, // Boutique column RTL if Arabic
