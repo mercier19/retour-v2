@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Search, ArrowRightLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import CopyTrackingButton from '@/components/CopyTrackingButton';
 
 interface Warehouse {
   id: string;
