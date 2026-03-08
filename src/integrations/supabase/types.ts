@@ -503,6 +503,24 @@ export type Database = {
         Returns: Database["public"]["Enums"]["app_role"]
       }
       user_warehouse_ids: { Args: never; Returns: string[] }
+      warehouse_stats: {
+        Args: {
+          p_end_date?: string
+          p_start_date?: string
+          p_warehouse_ids: string[]
+        }
+        Returns: {
+          active_in_stock: number
+          given: number
+          in_transit: number
+          misrouted: number
+          missing: number
+          received: number
+          warehouse_id: string
+          warehouse_name: string
+          warehouse_type: string
+        }[]
+      }
     }
     Enums: {
       app_role: "operations" | "chef_agence" | "regional" | "super_admin"

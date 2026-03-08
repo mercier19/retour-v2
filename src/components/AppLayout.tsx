@@ -9,6 +9,7 @@ import Boxes from '@/components/Boxes';
 import DonnerRetours from '@/components/DonnerRetours';
 import StockControl from '@/components/StockControl';
 import Statistics from '@/components/Statistics';
+import AdvancedStatistics from '@/components/AdvancedStatistics';
 import SearchParcels from '@/components/SearchParcels';
 import TransferParcels from '@/components/TransferParcels';
 import Users from '@/components/admin/Users';
@@ -31,7 +32,7 @@ import {
   ArrowRightLeft } from
 'lucide-react';
 
-type Page = 'dashboard' | 'add' | 'boxes' | 'retours' | 'stock' | 'stats' | 'search' | 'transfer' | 'users' | 'warehouses';
+type Page = 'dashboard' | 'add' | 'boxes' | 'retours' | 'stock' | 'stats' | 'advanced-stats' | 'search' | 'transfer' | 'users' | 'warehouses';
 
 const AppLayout: React.FC = () => {
   const { profile, signOut } = useAuth();
@@ -59,6 +60,7 @@ const AppLayout: React.FC = () => {
   { id: 'retours', label: 'Donner retours', icon: HandCoins, show: true },
   { id: 'stock', label: 'Contrôle stock', icon: PackageCheck, show: canManageStock },
   { id: 'stats', label: 'Statistiques', icon: BarChart3, show: true },
+  { id: 'advanced-stats', label: 'Stats avancées', icon: BarChart3, show: hasRole('regional', 'super_admin') },
   { id: 'search', label: 'Rechercher', icon: Search, show: true },
   { id: 'transfer', label: 'Transférer', icon: ArrowRightLeft, show: true },
   { id: 'users', label: 'Utilisateurs', icon: UsersIcon, show: isAdmin },
@@ -73,6 +75,7 @@ const AppLayout: React.FC = () => {
       case 'retours':return <DonnerRetours />;
       case 'stock':return canManageStock ? <StockControl /> : null;
       case 'stats':return <Statistics />;
+      case 'advanced-stats':return hasRole('regional', 'super_admin') ? <AdvancedStatistics /> : null;
       case 'search':return <SearchParcels />;
       case 'transfer':return <TransferParcels />;
       case 'users':return isAdmin ? <Users /> : null;
