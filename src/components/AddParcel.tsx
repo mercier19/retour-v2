@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { Plus, QrCode, Settings } from 'lucide-react';
 import { Box } from '@/types/database';
 import ConsolidationBanner from '@/components/ConsolidationBanner';
+import { useSound } from '@/hooks/useSound';
 
 const AddParcel: React.FC = () => {
   const { warehouseId, showAll, hasRole } = useWarehouseFilter();
