@@ -80,7 +80,77 @@ const AddParcel: React.FC = () => {
     return error;
   };
 
+  // Check if a scanned parcel is an incoming transfer
+  const checkIncomingTransfer = async (trackingNumber: string): Promise<'received' | 'misrouted' | 'not_transfer'> => {
+    if (!warehouseId) return 'not_transfer';
+
+    // Look for parcels with this tracking that are in_transit
+    const { data: transitParcels } = await supabase
+      .from('parcels')
+      .select('id, tracking, warehouse_id, destination_warehouse_id, transfer_status, boutique, wilaya, commune, phone, is_multi_part, part_number, total_parts')
+      .eq('tracking', trackingNumber)
+      .eq('transfer_status', 'in_transit');
+
+    if (!transitParcels || transitParcels.length === 0) return 'not_transfer';
+
+    for (const parcel of transitParcels) {
+      if (parcel.destination_warehouse_id === warehouseId) {
+        // Correct destination — receive it
+        await supabase
+          .from('parcels')
+          .update({
+            warehouse_id: warehouseId,
+            transfer_status: 'in_stock',
+            transfer_completed_at: new Date().toISOString(),
+            destination_warehouse_id: null,
+            status: 'in_stock',
+            box_id: boxId || null,
+          })
+          .eq('id', parcel.id);
+
+        // Update transfer_history
+        await supabase
+          .from('transfer_history')
+          .update({ completed_at: new Date().toISOString(), status: 'completed' })
+          .eq('parcel_id', parcel.id)
+          .eq('status', 'pending');
+
+        toast.success(`Colis ${trackingNumber} reçu et ajouté au stock`);
+        playSuccess();
+        return 'received';
+      } else {
+        // Wrong destination — misrouted
+        const { data: destWh } = await supabase
+          .from('warehouses')
+          .select('name')
+          .eq('id', parcel.destination_warehouse_id!)
+          .single();
+
+        await supabase
+          .from('parcels')
+          .update({ transfer_status: 'misrouted' })
+          .eq('id', parcel.id);
+
+        await supabase
+          .from('transfer_history')
+          .update({ status: 'misrouted' })
+          .eq('parcel_id', parcel.id)
+          .eq('status', 'pending');
+
+        toast.error(`Colis mal dirigé — destination prévue: ${destWh?.name || 'Inconnue'}`);
+        playError();
+        return 'misrouted';
+      }
+    }
+
+    return 'not_transfer';
+  };
+
   const handleDuplicate = async (parcelData: any) => {
+    // First check if it's an incoming transfer
+    const transferResult = await checkIncomingTransfer(parcelData.tracking);
+    if (transferResult !== 'not_transfer') return;
+
     // Check if existing parcel with this tracking is multi-part
     const { data: existing } = await supabase
       .from('parcels')
@@ -131,14 +201,12 @@ const AddParcel: React.FC = () => {
     setMultiPartDialog(false);
     setLoading(true);
 
-    // Convert existing parcel to multi-part
     await supabase
       .from('parcels')
       .update({ is_multi_part: true, part_number: 1, total_parts: dialogTotalParts })
       .eq('warehouse_id', pendingInsert.warehouse_id)
       .eq('tracking', pendingInsert.tracking);
 
-    // Insert part 2
     const error = await insertParcel({
       ...pendingInsert,
       is_multi_part: true,
@@ -166,8 +234,17 @@ const AddParcel: React.FC = () => {
       return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
     setLoading(true);
+
+    // Check incoming transfer first
+    const transferResult = await checkIncomingTransfer(tracking.trim());
+    if (transferResult !== 'not_transfer') {
+      setTracking('');
+      setLoading(false);
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
 
     const parcelData: any = {
       warehouse_id: warehouseId,
@@ -211,10 +288,19 @@ const AddParcel: React.FC = () => {
     }
     const parts = qrInput.split(',');
     const t = parts[1]?.trim();
-    if (!t) { toast.error('Format QR invalide'); return; }
+    if (!t) { toast.error('Format QR invalide'); playError(); return; }
+
+    setLoading(true);
+
+    // Check incoming transfer first
+    const transferResult = await checkIncomingTransfer(t);
+    if (transferResult !== 'not_transfer') {
+      setQrInput('');
+      setLoading(false);
+      return;
+    }
 
     const { data: { user } } = await supabase.auth.getUser();
-    setLoading(true);
 
     const parcelData: any = {
       warehouse_id: warehouseId,
