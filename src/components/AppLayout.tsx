@@ -9,6 +9,7 @@ import Boxes from '@/components/Boxes';
 import DonnerRetours from '@/components/DonnerRetours';
 import StockControl from '@/components/StockControl';
 import Statistics from '@/components/Statistics';
+import AdvancedStatistics from '@/components/AdvancedStatistics';
 import SearchParcels from '@/components/SearchParcels';
 import TransferParcels from '@/components/TransferParcels';
 import Users from '@/components/admin/Users';
