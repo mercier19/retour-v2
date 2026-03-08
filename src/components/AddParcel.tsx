@@ -250,7 +250,20 @@ const AddParcel: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Ajouter des colis</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold">Ajouter des colis</h1>
+          {hasRole('chef_agence', 'regional', 'super_admin') && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setShowSettings(!showSettings)}
+              title="Paramètres de regroupement"
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
         <div className="flex gap-2">
           <Button variant={mode === 'manual' ? 'default' : 'outline'} size="sm" onClick={() => setMode('manual')}>
             <Plus className="w-4 h-4 mr-1" /> Manuel
@@ -260,6 +273,46 @@ const AddParcel: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* Consolidation settings panel */}
+      {showSettings && hasRole('chef_agence', 'regional', 'super_admin') && (
+        <Card className="border-muted">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="consolidation-toggle" className="cursor-pointer">
+                Activer suggestion de regroupement
+              </Label>
+              <Switch
+                id="consolidation-toggle"
+                checked={consolidation.enabled}
+                onCheckedChange={consolidation.setEnabled}
+              />
+            </div>
+            {consolidation.enabled && (
+              <div className="flex items-center gap-3">
+                <Label>Seuil (nombre de colis)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={consolidation.threshold}
+                  onChange={(e) => consolidation.setThreshold(parseInt(e.target.value) || 10)}
+                  className="w-20"
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Consolidation suggestions */}
+      {warehouseId && (
+        <ConsolidationBanner
+          warehouseId={warehouseId}
+          threshold={consolidation.threshold}
+          enabled={consolidation.enabled}
+          onConsolidated={loadBoxes}
+        />
+      )}
 
       <Card className="glass-card">
         <CardHeader>
