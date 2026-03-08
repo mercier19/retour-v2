@@ -39,6 +39,14 @@ const AddParcel: React.FC = () => {
   const [multiPartDialog, setMultiPartDialog] = useState(false);
   const [pendingInsert, setPendingInsert] = useState<any>(null);
   const [dialogTotalParts, setDialogTotalParts] = useState(2);
+  const cachedUserId = React.useRef<string | null>(null);
+
+  useEffect(() => {
+    // Cache user ID once on mount
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      cachedUserId.current = user?.id || null;
+    });
+  }, []);
 
   useEffect(() => {
     if (warehouseId) loadBoxes();
@@ -274,14 +282,12 @@ toast.error('Veuillez sélectionner une box');
       return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-
     const parcelData: any = {
       warehouse_id: warehouseId,
       tracking: tracking.trim(),
       box_id: boxId || null,
       boutique: boutique.trim() || null,
-      added_by: user?.id || null,
+      added_by: cachedUserId.current,
       is_multi_part: isMultiPart,
       part_number: 1,
       total_parts: isMultiPart ? totalParts : 1,
@@ -320,30 +326,21 @@ toast.error('Veuillez sélectionner une box');
     const t = parts[1]?.trim();
     if (!t) { toast.error('Format QR invalide'); playError(); return; }
 
+    // Clear input immediately so scanner is ready for next scan
+    setQrInput('');
     setLoading(true);
-
-    // Check incoming transfer first
-    const transferResult = await checkIncomingTransfer(t);
-    if (transferResult !== 'not_transfer') {
-      setQrInput('');
-      setLoading(false);
-      return;
-    }
-
-    const { data: { user } } = await supabase.auth.getUser();
 
     const sdHdRaw = parts[6]?.trim();
     const deliveryType = sdHdRaw === '1' ? 'SD' : 'HD';
     const boutiqueName = parts[3]?.trim() || null;
     const boutiqueExternalId = parts[4]?.trim() ? parseInt(parts[4].trim()) : null;
 
-    // Auto-populate boutique_mappings from QR data
+    // Fire-and-forget: don't await boutique_mappings upsert
     if (boutiqueName && boutiqueExternalId && !isNaN(boutiqueExternalId)) {
-      await supabase
+      supabase
         .from('boutique_mappings')
         .upsert({ name: boutiqueName, external_id: boutiqueExternalId }, { onConflict: 'name' })
-        .select()
-        .maybeSingle();
+        .then(({ error }) => { if (error) console.warn('boutique_mappings upsert error:', error); });
     }
 
     const parcelData: any = {
@@ -354,14 +351,16 @@ toast.error('Veuillez sélectionner une box');
       wilaya: parts[0]?.trim() || null,
       commune: parts[2]?.trim() || null,
       phone: parts[8]?.trim() || null,
-      added_by: user?.id || null,
+      added_by: cachedUserId.current,
       delivery_type: deliveryType,
     };
 
+    // Try insert first (fast path for most scans)
     const error = await insertParcel(parcelData);
 
     if (error) {
       if (error.code === '23505') {
+        // Only check transfers on duplicate — avoids extra DB calls for new parcels
         await handleDuplicate(parcelData);
       } else {
         toast.error(error.message);
@@ -371,7 +370,6 @@ toast.error('Veuillez sélectionner une box');
       toast.success(`Colis ${t} ajouté`);
       playSuccess();
     }
-    setQrInput('');
     setLoading(false);
   };
 
