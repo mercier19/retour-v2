@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, X, FileDown } from 'lucide-react';
 import { Box } from '@/types/database';
+import { printBoxPDF } from '@/lib/box-pdf';
 
 const Boxes: React.FC = () => {
   const { warehouseId, showAll } = useWarehouseFilter();
