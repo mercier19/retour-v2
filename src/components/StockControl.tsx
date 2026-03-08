@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Trash2, Download, Archive } from 'lucide-react';
 import { Box } from '@/types/database';
 import { exportParcelsToExcel } from '@/lib/stock-export';
+import { logUserAction } from '@/utils/actionLogger';
 
 const StockControl: React.FC = () => {
   const { warehouseId, currentWarehouse, showAll, profile } = useWarehouseFilter();
