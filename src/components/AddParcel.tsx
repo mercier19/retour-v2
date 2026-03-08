@@ -84,63 +84,69 @@ const AddParcel: React.FC = () => {
   const checkIncomingTransfer = async (trackingNumber: string): Promise<'received' | 'misrouted' | 'not_transfer'> => {
     if (!warehouseId) return 'not_transfer';
 
-    // Look for parcels with this tracking that are in_transit
-    const { data: transitParcels } = await supabase
+    // First check: parcels in transit destined for THIS warehouse
+    const { data: destParcels } = await supabase
       .from('parcels')
-      .select('id, tracking, warehouse_id, destination_warehouse_id, transfer_status, boutique, wilaya, commune, phone, is_multi_part, part_number, total_parts')
+      .select('id, tracking, warehouse_id, destination_warehouse_id, transfer_status')
+      .eq('tracking', trackingNumber)
+      .eq('transfer_status', 'in_transit')
+      .eq('destination_warehouse_id', warehouseId);
+
+    if (destParcels && destParcels.length > 0) {
+      const parcel = destParcels[0];
+      // Correct destination — receive it
+      await supabase
+        .from('parcels')
+        .update({
+          warehouse_id: warehouseId,
+          transfer_status: 'in_stock',
+          transfer_completed_at: new Date().toISOString(),
+          destination_warehouse_id: null,
+          status: 'in_stock',
+          box_id: boxId || null,
+        })
+        .eq('id', parcel.id);
+
+      await supabase
+        .from('transfer_history')
+        .update({ completed_at: new Date().toISOString(), status: 'completed' })
+        .eq('parcel_id', parcel.id)
+        .eq('status', 'pending');
+
+      toast.success(`Colis ${trackingNumber} reçu et ajouté au stock`);
+      playSuccess();
+      return 'received';
+    }
+
+    // Second check: parcels in transit but destined for a DIFFERENT warehouse (misroute)
+    const { data: otherTransit } = await supabase
+      .from('parcels')
+      .select('id, destination_warehouse_id')
       .eq('tracking', trackingNumber)
       .eq('transfer_status', 'in_transit');
 
-    if (!transitParcels || transitParcels.length === 0) return 'not_transfer';
+    if (otherTransit && otherTransit.length > 0) {
+      const parcel = otherTransit[0];
+      const { data: destWh } = await supabase
+        .from('warehouses')
+        .select('name')
+        .eq('id', parcel.destination_warehouse_id!)
+        .single();
 
-    for (const parcel of transitParcels) {
-      if (parcel.destination_warehouse_id === warehouseId) {
-        // Correct destination — receive it
-        await supabase
-          .from('parcels')
-          .update({
-            warehouse_id: warehouseId,
-            transfer_status: 'in_stock',
-            transfer_completed_at: new Date().toISOString(),
-            destination_warehouse_id: null,
-            status: 'in_stock',
-            box_id: boxId || null,
-          })
-          .eq('id', parcel.id);
+      await supabase
+        .from('parcels')
+        .update({ transfer_status: 'misrouted' })
+        .eq('id', parcel.id);
 
-        // Update transfer_history
-        await supabase
-          .from('transfer_history')
-          .update({ completed_at: new Date().toISOString(), status: 'completed' })
-          .eq('parcel_id', parcel.id)
-          .eq('status', 'pending');
+      await supabase
+        .from('transfer_history')
+        .update({ status: 'misrouted' })
+        .eq('parcel_id', parcel.id)
+        .eq('status', 'pending');
 
-        toast.success(`Colis ${trackingNumber} reçu et ajouté au stock`);
-        playSuccess();
-        return 'received';
-      } else {
-        // Wrong destination — misrouted
-        const { data: destWh } = await supabase
-          .from('warehouses')
-          .select('name')
-          .eq('id', parcel.destination_warehouse_id!)
-          .single();
-
-        await supabase
-          .from('parcels')
-          .update({ transfer_status: 'misrouted' })
-          .eq('id', parcel.id);
-
-        await supabase
-          .from('transfer_history')
-          .update({ status: 'misrouted' })
-          .eq('parcel_id', parcel.id)
-          .eq('status', 'pending');
-
-        toast.error(`Colis mal dirigé — destination prévue: ${destWh?.name || 'Inconnue'}`);
-        playError();
-        return 'misrouted';
-      }
+      toast.error(`Colis mal dirigé — destination prévue: ${destWh?.name || 'Inconnue'}`);
+      playError();
+      return 'misrouted';
     }
 
     return 'not_transfer';
