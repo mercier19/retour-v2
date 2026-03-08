@@ -35,6 +35,7 @@ interface ParcelWithDetails {
   total_parts: number;
   transfer_status: string | null;
   destination_warehouse_id: string | null;
+  misrouted_at_warehouse_id: string | null;
 }
 
 const DonnerRetours: React.FC = () => {
@@ -115,7 +116,7 @@ const DonnerRetours: React.FC = () => {
     setLoading(true);
     let dbQuery = supabase
       .from('parcels')
-      .select('id, tracking, boutique, box_id, is_missing, created_at, warehouse_id, status, added_by, is_multi_part, part_number, total_parts, transfer_status, destination_warehouse_id, boxes(name), profiles:added_by(full_name)')
+      .select('id, tracking, boutique, box_id, is_missing, created_at, warehouse_id, status, added_by, is_multi_part, part_number, total_parts, transfer_status, destination_warehouse_id, misrouted_at_warehouse_id, boxes(name), profiles:added_by(full_name)')
       .eq('status', 'in_stock');
 
     if (showAll) {
@@ -154,6 +155,7 @@ const DonnerRetours: React.FC = () => {
         total_parts: p.total_parts ?? 1,
         transfer_status: p.transfer_status ?? 'in_stock',
         destination_warehouse_id: p.destination_warehouse_id,
+        misrouted_at_warehouse_id: p.misrouted_at_warehouse_id ?? null,
       })));
     }
     setLoading(false);
@@ -304,7 +306,14 @@ const DonnerRetours: React.FC = () => {
       return <Badge variant="secondary" className="bg-amber-500/20 text-amber-700 border-amber-300 text-[10px]">En transfert → {getWarehouseName(parcel.destination_warehouse_id)}</Badge>;
     }
     if (parcel.transfer_status === 'misrouted') {
-      return <Badge variant="destructive" className="text-[10px]">Mal dirigé</Badge>;
+      return (
+        <div className="flex flex-col items-end gap-0.5">
+          <Badge variant="destructive" className="text-[10px]">Faux dispatch</Badge>
+          {parcel.misrouted_at_warehouse_id && (
+            <span className="text-[10px] text-destructive">vers {getWarehouseName(parcel.misrouted_at_warehouse_id)}</span>
+          )}
+        </div>
+      );
     }
     return null;
   };

@@ -29,6 +29,7 @@ interface ParcelItem {
   status: string | null;
   transfer_status: string | null;
   destination_warehouse_id: string | null;
+  misrouted_at_warehouse_id: string | null;
   warehouse_id: string;
   is_multi_part: boolean;
   part_number: number;
@@ -67,7 +68,7 @@ const TransferParcels: React.FC = () => {
     const s = search.trim();
     let query = supabase
       .from('parcels')
-      .select('id, tracking, boutique, status, warehouse_id, is_multi_part, part_number, total_parts, transfer_status, destination_warehouse_id, boxes(name)')
+      .select('id, tracking, boutique, status, warehouse_id, is_multi_part, part_number, total_parts, transfer_status, destination_warehouse_id, misrouted_at_warehouse_id, boxes(name)')
       .or(`tracking.ilike.%${s}%,boutique.ilike.%${s}%`)
       .order('tracking')
       .order('part_number')
@@ -97,6 +98,7 @@ const TransferParcels: React.FC = () => {
         status: p.status,
         transfer_status: p.transfer_status,
         destination_warehouse_id: p.destination_warehouse_id,
+        misrouted_at_warehouse_id: p.misrouted_at_warehouse_id ?? null,
         warehouse_id: p.warehouse_id,
         is_multi_part: p.is_multi_part ?? false,
         part_number: p.part_number ?? 1,
@@ -179,7 +181,14 @@ const TransferParcels: React.FC = () => {
       return <Badge variant="secondary" className="bg-amber-500/20 text-amber-700 border-amber-300 shrink-0">En transfert → {getWarehouseName(p.destination_warehouse_id)}</Badge>;
     }
     if (p.transfer_status === 'misrouted') {
-      return <Badge variant="destructive" className="shrink-0">Mal dirigé</Badge>;
+      return (
+        <div className="flex flex-col items-end gap-0.5 shrink-0">
+          <Badge variant="destructive">Faux dispatch</Badge>
+          {p.misrouted_at_warehouse_id && (
+            <span className="text-[10px] text-destructive">vers {getWarehouseName(p.misrouted_at_warehouse_id)}</span>
+          )}
+        </div>
+      );
     }
     return <Badge variant="outline" className="shrink-0">{p.status || 'En stock'}</Badge>;
   };
