@@ -420,6 +420,10 @@ export type Database = {
           wilaya: string
         }[]
       }
+      is_parcel_given: {
+        Args: { p_tracking: string; p_warehouse_id: string }
+        Returns: boolean
+      }
       is_super_admin: { Args: never; Returns: boolean }
       receive_incoming_transfer: {
         Args: {
