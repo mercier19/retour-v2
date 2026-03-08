@@ -218,6 +218,9 @@ const Statistics: React.FC = () => {
     );
   }
 
+  const sdPct = activeParcels.length > 0 ? ((sdInStock.length / activeParcels.length) * 100).toFixed(0) : '0';
+  const hdPct = activeParcels.length > 0 ? ((hdInStock.length / activeParcels.length) * 100).toFixed(0) : '0';
+
   const kpis = [
     { label: 'Colis actifs', value: activeParcels.length, icon: Package, color: 'text-primary' },
     { label: "Ajoutés aujourd'hui", value: addedToday.length, icon: TrendingUp, color: 'text-blue-600', delta: <DeltaBadge current={addedToday.length} previous={addedYesterday.length} /> },
