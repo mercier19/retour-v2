@@ -92,7 +92,7 @@ const DonnerRetours: React.FC = () => {
         .eq('box_id', newBoxId)
         .eq('status', 'in_stock');
       if (count !== null && count >= targetBox.quota) {
-        toast.error(`La palette "${targetBox.name}" est pleine (${targetBox.quota}/${targetBox.quota})`);
+        toast.error(`La box "${targetBox.name}" est pleine (${targetBox.quota}/${targetBox.quota})`);
         return;
       }
     }
