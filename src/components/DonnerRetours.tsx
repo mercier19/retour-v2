@@ -8,9 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem } from '@/components/ui/command';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Search, AlertTriangle, HandCoins, CheckSquare, XSquare, ChevronsUpDown, Check } from 'lucide-react';
+import { Search, AlertTriangle, HandCoins, CheckSquare, XSquare, ChevronsUpDown, Check, ArrowRightLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Box } from '@/types/database';
 
 interface ParcelWithDetails {
   id: string;
@@ -38,6 +40,54 @@ const DonnerRetours: React.FC = () => {
   const [searchMode, setSearchMode] = useState<'tracking' | 'boutique'>('boutique');
   const [boutiques, setBoutiques] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
+  const [boxes, setBoxes] = useState<Box[]>([]);
+  const [boxTransferParcelId, setBoxTransferParcelId] = useState<string | null>(null);
+
+  const loadBoxes = async () => {
+    const ids = showAll ? warehouseIds : warehouseId ? [warehouseId] : [];
+    if (ids.length === 0) return;
+    // For box transfer we load boxes for the specific parcel's warehouse, but preload current warehouse boxes
+    const { data } = await supabase
+      .from('boxes')
+      .select('*')
+      .in('warehouse_id', ids)
+      .order('name');
+    setBoxes((data as Box[]) || []);
+  };
+
+  const handleBoxTransfer = async (parcelId: string, newBoxId: string) => {
+    const parcel = parcels.find(p => p.id === parcelId);
+    if (!parcel) return;
+
+    // Check quota
+    const targetBox = boxes.find(b => b.id === newBoxId);
+    if (targetBox && targetBox.quota && targetBox.quota > 0) {
+      const { count } = await supabase
+        .from('parcels')
+        .select('id', { count: 'exact', head: true })
+        .eq('box_id', newBoxId)
+        .eq('status', 'in_stock');
+      if (count !== null && count >= targetBox.quota) {
+        toast.error(`La palette "${targetBox.name}" est pleine (${targetBox.quota}/${targetBox.quota})`);
+        return;
+      }
+    }
+
+    const { error } = await supabase
+      .from('parcels')
+      .update({ box_id: newBoxId })
+      .eq('id', parcelId);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    const newBoxName = targetBox?.name || null;
+    setParcels(prev => prev.map(p => p.id === parcelId ? { ...p, box_id: newBoxId, box_name: newBoxName } : p));
+    toast.success(`Colis déplacé vers ${newBoxName}`);
+    setBoxTransferParcelId(null);
+  };
 
   const loadParcels = async (query: string) => {
     if (!warehouseId && !showAll || !query.trim()) {
@@ -46,10 +96,10 @@ const DonnerRetours: React.FC = () => {
     }
 
     setLoading(true);
-    let dbQuery = supabase.
-    from('parcels').
-    select('id, tracking, boutique, box_id, is_missing, created_at, warehouse_id, status, added_by, is_multi_part, part_number, total_parts, boxes(name), profiles:added_by(full_name)').
-    eq('status', 'in_stock');
+    let dbQuery = supabase
+      .from('parcels')
+      .select('id, tracking, boutique, box_id, is_missing, created_at, warehouse_id, status, added_by, is_multi_part, part_number, total_parts, boxes(name), profiles:added_by(full_name)')
+      .eq('status', 'in_stock');
 
     if (showAll) {
       dbQuery = dbQuery.in('warehouse_id', warehouseIds);
@@ -89,18 +139,19 @@ const DonnerRetours: React.FC = () => {
   const loadBoutiques = async () => {
     const ids = showAll ? warehouseIds : warehouseId ? [warehouseId] : [];
     if (ids.length === 0) return;
-    const { data } = await supabase.
-    from('parcels').
-    select('boutique').
-    eq('status', 'in_stock').
-    in('warehouse_id', ids).
-    not('boutique', 'is', null);
+    const { data } = await supabase
+      .from('parcels')
+      .select('boutique')
+      .eq('status', 'in_stock')
+      .in('warehouse_id', ids)
+      .not('boutique', 'is', null);
     const unique = Array.from(new Set((data || []).map((p: any) => p.boutique).filter(Boolean))).sort() as string[];
     setBoutiques(unique);
   };
 
   useEffect(() => {
     loadBoutiques();
+    loadBoxes();
   }, [warehouseId, showAll]);
 
   useEffect(() => {
@@ -140,10 +191,10 @@ const DonnerRetours: React.FC = () => {
 
     const unselectedIds = parcels.filter((p) => !selected.has(p.id)).map((p) => p.id);
 
-    const { error: givenError } = await supabase.
-    from('parcels').
-    update({ status: 'given', given_at: new Date().toISOString() }).
-    in('id', Array.from(selected));
+    const { error: givenError } = await supabase
+      .from('parcels')
+      .update({ status: 'given', given_at: new Date().toISOString() })
+      .in('id', Array.from(selected));
 
     if (givenError) {
       toast.error(givenError.message);
@@ -151,10 +202,10 @@ const DonnerRetours: React.FC = () => {
     }
 
     if (unselectedIds.length > 0) {
-      await supabase.
-      from('parcels').
-      update({ is_missing: true }).
-      in('id', unselectedIds);
+      await supabase
+        .from('parcels')
+        .update({ is_missing: true })
+        .in('id', unselectedIds);
     }
 
     toast.success(`${selected.size} colis donné(s)${unselectedIds.length > 0 ? `, ${unselectedIds.length} marqué(s) manquant(s)` : ''}`);
@@ -188,14 +239,12 @@ const DonnerRetours: React.FC = () => {
               variant={searchMode === 'boutique' ? 'default' : 'outline'}
               size="sm"
               onClick={() => {setSearchMode('boutique');setSearch('');setParcels([]);setSelected(new Set());}}>
-              
               Par boutique
             </Button>
             <Button
               variant={searchMode === 'tracking' ? 'default' : 'outline'}
               size="sm"
               onClick={() => {setSearchMode('tracking');setSearch('');setParcels([]);setSelected(new Set());}}>
-              
               Par tracking
             </Button>
           </div>
@@ -218,7 +267,6 @@ const DonnerRetours: React.FC = () => {
                       key={b}
                       value={b}
                       onSelect={() => {setSearch(b);setOpen(false);}}>
-                      
                           <Check className={cn("mr-2 h-4 w-4", search === b ? "opacity-100" : "opacity-0")} />
                           {b}
                         </CommandItem>
@@ -237,7 +285,6 @@ const DonnerRetours: React.FC = () => {
               placeholder="Rechercher par tracking..."
               className="pl-9"
               autoFocus />
-            
             </div>
           }
         </CardContent>
@@ -283,6 +330,40 @@ const DonnerRetours: React.FC = () => {
                   {parcel.added_by_name && <span>👤 {parcel.added_by_name}</span>}
                 </div>
               </div>
+              {/* Box transfer popover */}
+              <Popover open={boxTransferParcelId === parcel.id} onOpenChange={(o) => setBoxTransferParcelId(o ? parcel.id : null)}>
+                <PopoverTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={(e) => e.stopPropagation()}
+                    title="Changer de palette"
+                  >
+                    <ArrowRightLeft className="w-4 h-4 text-muted-foreground" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48 p-0" align="end" onClick={(e) => e.stopPropagation()}>
+                  <Command>
+                    <CommandInput placeholder="Palette..." />
+                    <CommandList>
+                      <CommandEmpty>Aucune palette</CommandEmpty>
+                      <CommandGroup>
+                        {boxes.filter(b => b.warehouse_id === parcel.warehouse_id).map((box) => (
+                          <CommandItem
+                            key={box.id}
+                            value={box.name}
+                            disabled={box.id === parcel.box_id}
+                            onSelect={() => handleBoxTransfer(parcel.id, box.id)}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", parcel.box_id === box.id ? "opacity-100" : "opacity-0")} />
+                            {box.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               <a
                 href={`https://yalidine.app/app/colis/index.php?source=cec&column=tracking&q=${encodeURIComponent(parcel.tracking)}`}
                 target="_blank"
@@ -298,14 +379,12 @@ const DonnerRetours: React.FC = () => {
               variant="ghost"
               onClick={async () => {
                 const { error } = await supabase.from('parcels').update({ is_missing: !parcel.is_missing }).eq('id', parcel.id);
-                if (error) toast.error(error.message);else
-                {
+                if (error) toast.error(error.message); else {
                   setParcels((prev) => prev.map((p) => p.id === parcel.id ? { ...p, is_missing: !p.is_missing } : p));
                   toast.success(parcel.is_missing ? 'Marqué trouvé' : 'Marqué manquant');
                 }
               }}
               title={parcel.is_missing ? 'Marquer trouvé' : 'Marquer manquant'}>
-              
                 <AlertTriangle className={`w-4 h-4 ${parcel.is_missing ? 'text-destructive' : 'text-muted-foreground'}`} />
               </Button>
             </CardContent>
@@ -322,8 +401,8 @@ const DonnerRetours: React.FC = () => {
           </p>
         }
       </div>
-    </div>);
-
+    </div>
+  );
 };
 
 export default DonnerRetours;
