@@ -30,9 +30,9 @@ interface GlobalStats {
   active_in_stock: number;
 }
 
-const cell = (text: string, opts: Partial<PptxGenJS.TableCellProps['options']> = {}): PptxGenJS.TableCell => ({
+const cell = (text: string, opts: Record<string, any> = {}): PptxGenJS.TableCell => ({
   text,
-  options: { fontSize: 10, align: 'center', ...opts },
+  options: { fontSize: 10, align: 'center' as const, ...opts },
 });
 
 const headerCell = (text: string): PptxGenJS.TableCell => cell(text, {
