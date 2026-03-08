@@ -251,6 +251,7 @@ const DonnerRetours: React.FC = () => {
     setSelected(new Set());
     setSearch('');
     setParcels([]);
+  };
 
   // Transfer logic
   const openTransferModal = (parcelIds: string[]) => {
