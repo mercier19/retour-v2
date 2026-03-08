@@ -92,6 +92,7 @@ const Statistics: React.FC = () => {
   const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
 
   const activeParcels = useMemo(() => parcels.filter(p => p.status !== 'given' && p.status !== 'cancelled'), [parcels]);
+  const missingParcels = useMemo(() => activeParcels.filter(p => p.is_missing), [activeParcels]);
   const sdInStock = useMemo(() => activeParcels.filter(p => p.delivery_type !== 'HD'), [activeParcels]);
   const hdInStock = useMemo(() => activeParcels.filter(p => p.delivery_type === 'HD'), [activeParcels]);
   const addedToday = useMemo(() => parcels.filter(p => p.created_at?.startsWith(todayStr)), [parcels, todayStr]);
@@ -235,6 +236,7 @@ const Statistics: React.FC = () => {
     { label: 'Donnés cette semaine', value: givenThisWeek.length, icon: Calendar, color: 'text-emerald-600' },
     { label: 'Boutiques uniques', value: uniqueBoutiques.size, icon: Store, color: 'text-amber-600' },
     { label: 'Boxes à éclater', value: boxesOverThreshold.length, icon: AlertTriangle, color: boxesOverThreshold.length > 0 ? 'text-destructive' : 'text-muted-foreground' },
+    { label: 'Manquants', value: missingParcels.length, icon: AlertTriangle, color: missingParcels.length > 0 ? 'text-destructive' : 'text-muted-foreground' },
   ];
 
   return (
