@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { Box, Warehouse } from '@/types/database';
 import ParcelHistoryDialog from '@/components/ParcelHistoryDialog';
 import CopyTrackingButton from '@/components/CopyTrackingButton';
+import { logUserAction } from '@/utils/actionLogger';
 
 interface ParcelWithDetails {
   id: string;
