@@ -150,6 +150,10 @@ const AddParcel: React.FC = () => {
       if (showAll) toast.error('Veuillez sélectionner un dépôt spécifique pour ajouter un colis');
       return;
     }
+    if (!boxId) {
+      toast.error('Veuillez sélectionner une palette');
+      return;
+    }
 
     const { data: { user } } = await supabase.auth.getUser();
     setLoading(true);
@@ -186,6 +190,10 @@ const AddParcel: React.FC = () => {
   const handleQrScan = async () => {
     if (!qrInput.trim() || !warehouseId) {
       if (showAll) toast.error('Veuillez sélectionner un dépôt spécifique');
+      return;
+    }
+    if (!boxId) {
+      toast.error('Veuillez sélectionner une palette');
       return;
     }
     const parts = qrInput.split(',');
@@ -255,12 +263,12 @@ const AddParcel: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Box selector */}
+          {/* Box selector - required */}
           <div className="mb-4">
-            <Label>Box</Label>
-            <Select value={boxId} onValueChange={setBoxId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner une box (optionnel)" />
+            <Label>Palette *</Label>
+            <Select value={boxId} onValueChange={setBoxId} required>
+              <SelectTrigger className={!boxId ? 'border-destructive/50' : ''}>
+                <SelectValue placeholder="Sélectionner une palette" />
               </SelectTrigger>
               <SelectContent>
                 {boxes.map((box) => (
