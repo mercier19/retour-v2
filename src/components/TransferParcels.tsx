@@ -68,7 +68,7 @@ const TransferParcels: React.FC = () => {
     const s = search.trim();
     let query = supabase
       .from('parcels')
-      .select('id, tracking, boutique, status, warehouse_id, is_multi_part, part_number, total_parts, transfer_status, destination_warehouse_id, boxes(name)')
+      .select('id, tracking, boutique, status, warehouse_id, is_multi_part, part_number, total_parts, transfer_status, destination_warehouse_id, misrouted_at_warehouse_id, boxes(name)')
       .or(`tracking.ilike.%${s}%,boutique.ilike.%${s}%`)
       .order('tracking')
       .order('part_number')
