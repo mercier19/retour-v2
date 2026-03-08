@@ -35,6 +35,7 @@ interface ParcelWithDetails {
   total_parts: number;
   transfer_status: string | null;
   destination_warehouse_id: string | null;
+  misrouted_at_warehouse_id: string | null;
 }
 
 const DonnerRetours: React.FC = () => {
