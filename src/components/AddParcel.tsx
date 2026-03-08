@@ -187,10 +187,12 @@ const AddParcel: React.FC = () => {
         await handleDuplicate(parcelData);
       } else {
         toast.error('Erreur: ' + error.message);
+        playError();
       }
     } else {
       const msg = isMultiPart ? `Partie 1/${totalParts} ajoutée` : 'Colis ajouté avec succès';
       toast.success(msg);
+      isMultiPart ? playPart() : playSuccess();
       setTracking('');
       setBoutique('');
       setBoutiqueSearch('');
