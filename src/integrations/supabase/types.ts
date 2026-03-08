@@ -161,6 +161,7 @@ export type Database = {
           box_id: string | null
           commune: string | null
           created_at: string
+          destination_warehouse_id: string | null
           given_at: string | null
           id: string
           is_missing: boolean | null
@@ -170,6 +171,9 @@ export type Database = {
           status: string | null
           total_parts: number
           tracking: string
+          transfer_completed_at: string | null
+          transfer_initiated_at: string | null
+          transfer_status: string | null
           updated_at: string
           warehouse_id: string
           wilaya: string | null
@@ -180,6 +184,7 @@ export type Database = {
           box_id?: string | null
           commune?: string | null
           created_at?: string
+          destination_warehouse_id?: string | null
           given_at?: string | null
           id?: string
           is_missing?: boolean | null
@@ -189,6 +194,9 @@ export type Database = {
           status?: string | null
           total_parts?: number
           tracking: string
+          transfer_completed_at?: string | null
+          transfer_initiated_at?: string | null
+          transfer_status?: string | null
           updated_at?: string
           warehouse_id: string
           wilaya?: string | null
@@ -199,6 +207,7 @@ export type Database = {
           box_id?: string | null
           commune?: string | null
           created_at?: string
+          destination_warehouse_id?: string | null
           given_at?: string | null
           id?: string
           is_missing?: boolean | null
@@ -208,6 +217,9 @@ export type Database = {
           status?: string | null
           total_parts?: number
           tracking?: string
+          transfer_completed_at?: string | null
+          transfer_initiated_at?: string | null
+          transfer_status?: string | null
           updated_at?: string
           warehouse_id?: string
           wilaya?: string | null
@@ -225,6 +237,13 @@ export type Database = {
             columns: ["box_id"]
             isOneToOne: false
             referencedRelation: "boxes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parcels_destination_warehouse_id_fkey"
+            columns: ["destination_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
           {
@@ -262,6 +281,68 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      transfer_history: {
+        Row: {
+          completed_at: string | null
+          from_warehouse_id: string
+          id: string
+          initiated_at: string
+          initiated_by: string | null
+          parcel_id: string
+          status: string
+          to_warehouse_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          from_warehouse_id: string
+          id?: string
+          initiated_at?: string
+          initiated_by?: string | null
+          parcel_id: string
+          status?: string
+          to_warehouse_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          from_warehouse_id?: string
+          id?: string
+          initiated_at?: string
+          initiated_by?: string | null
+          parcel_id?: string
+          status?: string
+          to_warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfer_history_from_warehouse_id_fkey"
+            columns: ["from_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfer_history_initiated_by_fkey"
+            columns: ["initiated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfer_history_parcel_id_fkey"
+            columns: ["parcel_id"]
+            isOneToOne: false
+            referencedRelation: "parcels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfer_history_to_warehouse_id_fkey"
+            columns: ["to_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_warehouses: {
         Row: {
