@@ -16,7 +16,9 @@ import { Box } from '@/types/database';
 import ConsolidationBanner from '@/components/ConsolidationBanner';
 
 const AddParcel: React.FC = () => {
-  const { warehouseId, showAll } = useWarehouseFilter();
+  const { warehouseId, showAll, hasRole } = useWarehouseFilter();
+  const consolidation = useConsolidationSettings();
+  const [showSettings, setShowSettings] = useState(false);
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [tracking, setTracking] = useState('');
   const [boxId, setBoxId] = useState('');
