@@ -75,6 +75,7 @@ const AppLayout: React.FC = () => {
       case 'retours':return <DonnerRetours />;
       case 'stock':return canManageStock ? <StockControl /> : null;
       case 'stats':return <Statistics />;
+      case 'advanced-stats':return hasRole('regional', 'super_admin') ? <AdvancedStatistics /> : null;
       case 'search':return <SearchParcels />;
       case 'transfer':return <TransferParcels />;
       case 'users':return isAdmin ? <Users /> : null;
