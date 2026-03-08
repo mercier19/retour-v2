@@ -231,19 +231,31 @@ const DonnerRetours: React.FC = () => {
     }
 
     // Open Yalidine returns page if boutique mapping exists
-    const boutiqueName = search; // current boutique name from search
-    if (boutiqueName && currentWarehouse?.code) {
+    const boutiqueName = search;
+    if (boutiqueName) {
+      // Resolve warehouse code: use currentWarehouse or look up from first selected parcel
+      let whCode = currentWarehouse?.code;
+      if (!whCode) {
+        const firstParcel = parcels.find(p => selected.has(p.id));
+        if (firstParcel) {
+          const wh = allWarehouses.find(w => w.id === firstParcel.warehouse_id);
+          whCode = wh?.code;
+        }
+      }
+
       const { data: mapping } = await supabase
         .from('boutique_mappings')
         .select('external_id')
         .eq('name', boutiqueName)
         .maybeSingle();
 
-      if (mapping?.external_id) {
-        const url = `https://yalidine.app/app/sac/remettre_retour.php?s=${mapping.external_id}&hi=${currentWarehouse.code}`;
+      if (mapping?.external_id && whCode) {
+        const url = `https://yalidine.app/app/sac/remettre_retour.php?s=${mapping.external_id}&hi=${whCode}`;
         window.open(url, '_blank');
-      } else {
+      } else if (!mapping?.external_id) {
         toast.warning('Lien Yalidine non disponible (ID boutique manquant)');
+      } else {
+        toast.warning('Code agence introuvable');
       }
     }
 
