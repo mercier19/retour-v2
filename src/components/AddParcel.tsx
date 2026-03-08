@@ -333,13 +333,24 @@ toast.error('Veuillez sélectionner une box');
     const { data: { user } } = await supabase.auth.getUser();
 
     const sdHdRaw = parts[6]?.trim();
-    const deliveryType = sdHdRaw === '0' ? 'HD' : 'SD';
+    const deliveryType = sdHdRaw === '1' ? 'SD' : 'HD';
+    const boutiqueName = parts[3]?.trim() || null;
+    const boutiqueExternalId = parts[4]?.trim() ? parseInt(parts[4].trim()) : null;
+
+    // Auto-populate boutique_mappings from QR data
+    if (boutiqueName && boutiqueExternalId && !isNaN(boutiqueExternalId)) {
+      await supabase
+        .from('boutique_mappings')
+        .upsert({ name: boutiqueName, external_id: boutiqueExternalId }, { onConflict: 'name' })
+        .select()
+        .maybeSingle();
+    }
 
     const parcelData: any = {
       warehouse_id: warehouseId,
       tracking: t,
       box_id: boxId || null,
-      boutique: parts[3]?.trim() || null,
+      boutique: boutiqueName,
       wilaya: parts[0]?.trim() || null,
       commune: parts[2]?.trim() || null,
       phone: parts[8]?.trim() || null,
