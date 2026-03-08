@@ -39,6 +39,14 @@ const AddParcel: React.FC = () => {
   const [multiPartDialog, setMultiPartDialog] = useState(false);
   const [pendingInsert, setPendingInsert] = useState<any>(null);
   const [dialogTotalParts, setDialogTotalParts] = useState(2);
+  const cachedUserId = React.useRef<string | null>(null);
+
+  useEffect(() => {
+    // Cache user ID once on mount
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      cachedUserId.current = user?.id || null;
+    });
+  }, []);
 
   useEffect(() => {
     if (warehouseId) loadBoxes();
