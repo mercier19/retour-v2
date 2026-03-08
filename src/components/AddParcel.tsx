@@ -282,8 +282,6 @@ toast.error('Veuillez sélectionner une box');
       return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-
     const parcelData: any = {
       warehouse_id: warehouseId,
       tracking: tracking.trim(),
