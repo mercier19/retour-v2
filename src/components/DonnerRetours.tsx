@@ -306,7 +306,14 @@ const DonnerRetours: React.FC = () => {
       return <Badge variant="secondary" className="bg-amber-500/20 text-amber-700 border-amber-300 text-[10px]">En transfert → {getWarehouseName(parcel.destination_warehouse_id)}</Badge>;
     }
     if (parcel.transfer_status === 'misrouted') {
-      return <Badge variant="destructive" className="text-[10px]">Mal dirigé</Badge>;
+      return (
+        <div className="flex flex-col items-end gap-0.5">
+          <Badge variant="destructive" className="text-[10px]">Faux dispatch</Badge>
+          {parcel.misrouted_at_warehouse_id && (
+            <span className="text-[10px] text-destructive">vers {getWarehouseName(parcel.misrouted_at_warehouse_id)}</span>
+          )}
+        </div>
+      );
     }
     return null;
   };

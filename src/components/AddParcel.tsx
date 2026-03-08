@@ -159,12 +159,12 @@ const AddParcel: React.FC = () => {
 
       await supabase
         .from('parcels')
-        .update({ transfer_status: 'misrouted' })
+        .update({ transfer_status: 'misrouted', misrouted_at_warehouse_id: warehouseId })
         .eq('id', parcel.id);
 
       await supabase
         .from('transfer_history')
-        .update({ status: 'misrouted' })
+        .update({ status: 'misrouted', misrouted_at_warehouse_id: warehouseId })
         .eq('parcel_id', parcel.id)
         .eq('status', 'pending');
 

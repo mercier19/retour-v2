@@ -181,7 +181,14 @@ const TransferParcels: React.FC = () => {
       return <Badge variant="secondary" className="bg-amber-500/20 text-amber-700 border-amber-300 shrink-0">En transfert → {getWarehouseName(p.destination_warehouse_id)}</Badge>;
     }
     if (p.transfer_status === 'misrouted') {
-      return <Badge variant="destructive" className="shrink-0">Mal dirigé</Badge>;
+      return (
+        <div className="flex flex-col items-end gap-0.5 shrink-0">
+          <Badge variant="destructive">Faux dispatch</Badge>
+          {p.misrouted_at_warehouse_id && (
+            <span className="text-[10px] text-destructive">vers {getWarehouseName(p.misrouted_at_warehouse_id)}</span>
+          )}
+        </div>
+      );
     }
     return <Badge variant="outline" className="shrink-0">{p.status || 'En stock'}</Badge>;
   };
