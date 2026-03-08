@@ -60,6 +60,7 @@ const AppLayout: React.FC = () => {
   { id: 'retours', label: 'Donner retours', icon: HandCoins, show: true },
   { id: 'stock', label: 'Contrôle stock', icon: PackageCheck, show: canManageStock },
   { id: 'stats', label: 'Statistiques', icon: BarChart3, show: true },
+  { id: 'advanced-stats', label: 'Stats avancées', icon: BarChart3, show: hasRole('regional', 'super_admin') },
   { id: 'search', label: 'Rechercher', icon: Search, show: true },
   { id: 'transfer', label: 'Transférer', icon: ArrowRightLeft, show: true },
   { id: 'users', label: 'Utilisateurs', icon: UsersIcon, show: isAdmin },
