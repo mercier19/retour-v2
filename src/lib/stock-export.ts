@@ -9,10 +9,18 @@ type ParcelExportRow = {
   commune?: string | null;
   status?: string | null;
   is_missing?: boolean | null;
+  is_multi_part?: boolean;
+  part_number?: number;
+  total_parts?: number;
   created_at: string;
 };
 
-export const exportParcelsToExcel = async (rows: ParcelExportRow[], filename: string) => {
+interface ExportOptions {
+  agentName?: string;
+  warehouseName?: string;
+}
+
+export const exportParcelsToExcel = async (rows: ParcelExportRow[], filename: string, options?: ExportOptions) => {
   if (rows.length === 0) {
     toast.info('Aucun colis à exporter');
     return;
@@ -20,8 +28,14 @@ export const exportParcelsToExcel = async (rows: ParcelExportRow[], filename: st
 
   const XLSX = await import('xlsx');
 
+  const agent = options?.agentName || 'Inconnu';
+  const localisation = options?.warehouseName || 'Inconnu';
+
   const worksheetData = rows.map((p) => ({
+    Agent: agent,
+    Localisation: localisation,
     Tracking: p.tracking,
+    Partie: p.is_multi_part ? `${p.part_number || 1}/${p.total_parts || 1}` : '1/1',
     Box: p.box_name || p.boxes?.name || '',
     Boutique: p.boutique || '',
     Wilaya: p.wilaya || '',

@@ -14,10 +14,12 @@ import { toast } from 'sonner';
 import { Plus, QrCode, Settings } from 'lucide-react';
 import { Box } from '@/types/database';
 import ConsolidationBanner from '@/components/ConsolidationBanner';
+import { useSound } from '@/hooks/useSound';
 
 const AddParcel: React.FC = () => {
   const { warehouseId, showAll, hasRole } = useWarehouseFilter();
   const consolidation = useConsolidationSettings();
+  const { playSuccess, playError, playPart } = useSound();
   const [showSettings, setShowSettings] = useState(false);
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [tracking, setTracking] = useState('');
@@ -90,6 +92,7 @@ const AddParcel: React.FC = () => {
 
     if (!existing || existing.length === 0) {
       toast.error('Ce tracking existe déjà dans ce dépôt');
+      playError();
       return;
     }
 
@@ -99,6 +102,7 @@ const AddParcel: React.FC = () => {
       const nextPart = latest.part_number + 1;
       if (nextPart > latest.total_parts) {
         toast.warning(`Toutes les ${latest.total_parts} parties de ce tracking ont déjà été reçues`);
+        playError();
         return;
       }
       const error = await insertParcel({
@@ -109,8 +113,10 @@ const AddParcel: React.FC = () => {
       });
       if (error) {
         toast.error(error.message);
+        playError();
       } else {
         toast.success(`Partie ${nextPart}/${latest.total_parts} ajoutée pour ${parcelData.tracking}`);
+        playPart();
       }
     } else {
       // Not multi-part yet — prompt user
@@ -181,10 +187,12 @@ const AddParcel: React.FC = () => {
         await handleDuplicate(parcelData);
       } else {
         toast.error('Erreur: ' + error.message);
+        playError();
       }
     } else {
       const msg = isMultiPart ? `Partie 1/${totalParts} ajoutée` : 'Colis ajouté avec succès';
       toast.success(msg);
+      isMultiPart ? playPart() : playSuccess();
       setTracking('');
       setBoutique('');
       setBoutiqueSearch('');
@@ -226,9 +234,11 @@ const AddParcel: React.FC = () => {
         await handleDuplicate(parcelData);
       } else {
         toast.error(error.message);
+        playError();
       }
     } else {
       toast.success(`Colis ${t} ajouté`);
+      playSuccess();
     }
     setQrInput('');
     setLoading(false);

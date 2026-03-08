@@ -10,7 +10,7 @@ import { Box } from '@/types/database';
 import { exportParcelsToExcel } from '@/lib/stock-export';
 
 const StockControl: React.FC = () => {
-  const { warehouseId, currentWarehouse, showAll } = useWarehouseFilter();
+  const { warehouseId, currentWarehouse, showAll, profile } = useWarehouseFilter();
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [selectedBox, setSelectedBox] = useState('');
 
@@ -79,6 +79,11 @@ const StockControl: React.FC = () => {
     }
   };
 
+  const exportOptions = {
+    agentName: profile?.full_name || 'Inconnu',
+    warehouseName: currentWarehouse?.name || 'Inconnu',
+  };
+
   const exportActive = async () => {
     if (!warehouseId) return;
     const { data } = await supabase
@@ -87,7 +92,7 @@ const StockControl: React.FC = () => {
       .eq('warehouse_id', warehouseId)
       .order('created_at', { ascending: false });
 
-    exportParcelsToExcel(data || [], `stock_actif_${currentWarehouse?.code || 'export'}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    exportParcelsToExcel(data || [], `stock_actif_${currentWarehouse?.code || 'export'}_${new Date().toISOString().split('T')[0]}.xlsx`, exportOptions);
   };
 
   const exportAll = async () => {
@@ -111,7 +116,7 @@ const StockControl: React.FC = () => {
     }));
 
     const allParcels = [...activeMapped, ...(archived || [])];
-    exportParcelsToExcel(allParcels, `stock_complet_${currentWarehouse?.code || 'export'}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    exportParcelsToExcel(allParcels, `stock_complet_${currentWarehouse?.code || 'export'}_${new Date().toISOString().split('T')[0]}.xlsx`, exportOptions);
   };
 
   if (showAll) {
