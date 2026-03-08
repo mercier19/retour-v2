@@ -231,9 +231,11 @@ const AddParcel: React.FC = () => {
         await handleDuplicate(parcelData);
       } else {
         toast.error(error.message);
+        playError();
       }
     } else {
       toast.success(`Colis ${t} ajouté`);
+      playSuccess();
     }
     setQrInput('');
     setLoading(false);
