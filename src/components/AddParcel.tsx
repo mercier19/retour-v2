@@ -263,12 +263,12 @@ const AddParcel: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Box selector */}
+          {/* Box selector - required */}
           <div className="mb-4">
-            <Label>Box</Label>
-            <Select value={boxId} onValueChange={setBoxId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner une box (optionnel)" />
+            <Label>Palette *</Label>
+            <Select value={boxId} onValueChange={setBoxId} required>
+              <SelectTrigger className={!boxId ? 'border-destructive/50' : ''}>
+                <SelectValue placeholder="Sélectionner une palette" />
               </SelectTrigger>
               <SelectContent>
                 {boxes.map((box) => (
