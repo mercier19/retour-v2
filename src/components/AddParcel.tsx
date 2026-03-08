@@ -260,7 +260,7 @@ const AddParcel: React.FC = () => {
       return;
     }
     if (!boxId) {
-      toast.error('Veuillez sélectionner une palette');
+toast.error('Veuillez sélectionner une box');
       return;
     }
 
