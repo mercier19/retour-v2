@@ -84,41 +84,44 @@ const AddParcel: React.FC = () => {
   const checkIncomingTransfer = async (trackingNumber: string): Promise<'received' | 'misrouted' | 'not_transfer'> => {
     if (!warehouseId) return 'not_transfer';
 
-    // First check: parcels in transit destined for THIS warehouse
-    const { data: destParcels } = await supabase
-      .from('parcels')
-      .select('id, tracking, warehouse_id, destination_warehouse_id, transfer_status')
-      .eq('tracking', trackingNumber)
-      .eq('transfer_status', 'in_transit')
-      .eq('destination_warehouse_id', warehouseId);
+    const rpcClient = supabase as unknown as {
+      rpc: (fn: string, params?: Record<string, unknown>) => Promise<{ data: any; error: any }>;
+    };
 
-    if (destParcels && destParcels.length > 0) {
-      const parcel = destParcels[0];
-      // Correct destination — receive it
-      await supabase
-        .from('parcels')
-        .update({
-          warehouse_id: warehouseId,
-          transfer_status: 'in_stock',
-          transfer_completed_at: new Date().toISOString(),
-          destination_warehouse_id: null,
-          status: 'in_stock',
-          box_id: boxId || null,
-        })
-        .eq('id', parcel.id);
+    // 1) Try receiving via SECURITY DEFINER RPC (bypasses SELECT RLS visibility issues)
+    const { data: transitParcels, error: transitError } = await rpcClient.rpc('get_incoming_transfer', {
+      p_tracking: trackingNumber,
+      p_destination_warehouse_id: warehouseId,
+    });
 
-      await supabase
-        .from('transfer_history')
-        .update({ completed_at: new Date().toISOString(), status: 'completed' })
-        .eq('parcel_id', parcel.id)
-        .eq('status', 'pending');
+    if (transitError) {
+      console.error('Erreur RPC get_incoming_transfer:', transitError);
+      return 'not_transfer';
+    }
+
+    console.log('Transit parcels found via RPC:', transitParcels);
+
+    if (transitParcels && transitParcels.length > 0) {
+      const parcel = transitParcels[0];
+      const { error: receiveError } = await rpcClient.rpc('receive_incoming_transfer', {
+        p_parcel_id: parcel.id,
+        p_new_warehouse_id: warehouseId,
+        p_box_id: boxId || null,
+      });
+
+      if (receiveError) {
+        console.error('Erreur RPC receive_incoming_transfer:', receiveError);
+        toast.error('Erreur lors de la réception du colis en transfert');
+        playError();
+        return 'misrouted';
+      }
 
       toast.success(`Colis ${trackingNumber} reçu et ajouté au stock`);
       playSuccess();
       return 'received';
     }
 
-    // Second check: parcels in transit but destined for a DIFFERENT warehouse (misroute)
+    // 2) Fallback misroute detection (kept to preserve existing behavior)
     const { data: otherTransit } = await supabase
       .from('parcels')
       .select('id, destination_warehouse_id')
