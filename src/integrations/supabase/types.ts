@@ -403,7 +403,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_incoming_transfer: {
+        Args: { p_destination_warehouse_id: string; p_tracking: string }
+        Returns: {
+          boutique: string
+          commune: string
+          destination_warehouse_id: string
+          id: string
+          is_multi_part: boolean
+          part_number: number
+          phone: string
+          total_parts: number
+          tracking: string
+          transfer_status: string
+          warehouse_id: string
+          wilaya: string
+        }[]
+      }
       is_super_admin: { Args: never; Returns: boolean }
+      receive_incoming_transfer: {
+        Args: {
+          p_box_id: string
+          p_new_warehouse_id: string
+          p_parcel_id: string
+        }
+        Returns: undefined
+      }
       setup_super_admin: { Args: { _user_id: string }; Returns: undefined }
       user_role: {
         Args: never
