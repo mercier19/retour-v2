@@ -141,7 +141,12 @@ const Statistics: React.FC = () => {
   const topWilayas = useMemo(() => {
     const filtered = excludeEch ? parcels.filter(p => !p.tracking?.toLowerCase().startsWith('ech-')) : parcels;
     const counts: Record<string, number> = {};
-    filtered.forEach(p => { if (p.wilaya) counts[p.wilaya] = (counts[p.wilaya] || 0) + 1; });
+    filtered.forEach(p => {
+      if (p.wilaya) {
+        const name = getWilayaName(p.wilaya);
+        counts[name] = (counts[name] || 0) + 1;
+      }
+    });
     const total = Object.values(counts).reduce((a, b) => a + b, 0);
     return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
