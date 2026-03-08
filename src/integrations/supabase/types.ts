@@ -453,6 +453,23 @@ export type Database = {
         }
         Returns: undefined
       }
+      search_parcels_global: {
+        Args: { p_search: string }
+        Returns: {
+          boutique: string
+          box_name: string
+          destination_warehouse_name: string
+          id: string
+          is_missing: boolean
+          is_multi_part: boolean
+          part_number: number
+          status: string
+          total_parts: number
+          tracking: string
+          transfer_status: string
+          warehouse_name: string
+        }[]
+      }
       setup_super_admin: { Args: { _user_id: string }; Returns: undefined }
       user_role: {
         Args: never

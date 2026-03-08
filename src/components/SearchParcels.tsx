@@ -19,6 +19,9 @@ interface ParcelResult {
   is_multi_part: boolean;
   part_number: number;
   total_parts: number;
+  warehouse_name: string | null;
+  transfer_status: string | null;
+  destination_warehouse_name: string | null;
 }
 
 const statusLabel = (s: string) => {
@@ -40,46 +43,47 @@ const SearchParcels: React.FC = () => {
   const [missingLoading, setMissingLoading] = useState(false);
 
   useEffect(() => {
-    if ((!warehouseId && !showAll) || !search.trim()) { setResults([]); return; }
+    if (!search.trim()) { setResults([]); return; }
     const timer = setTimeout(() => doSearch(), 300);
     return () => clearTimeout(timer);
-  }, [search, warehouseId, showAll]);
+  }, [search]);
 
   useEffect(() => {
     if (showMissing) loadMissingParcels();
   }, [showMissing, warehouseId, showAll]);
 
-  const mapParcel = (p: any): ParcelResult => ({
-    id: p.id,
-    tracking: p.tracking,
-    boutique: p.boutique,
-    box_name: p.boxes?.name || null,
-    status: p.status,
-    is_missing: p.is_missing,
-    is_multi_part: p.is_multi_part ?? false,
-    part_number: p.part_number ?? 1,
-    total_parts: p.total_parts ?? 1,
-  });
-
   const doSearch = async () => {
-    if ((!warehouseId && !showAll) || !search.trim()) return;
+    if (!search.trim()) return;
     const s = search.trim();
-    let query = supabase
-      .from('parcels')
-      .select('id, tracking, boutique, status, is_missing, is_multi_part, part_number, total_parts, boxes(name)')
-      .or(`tracking.ilike.%${s}%,boutique.ilike.%${s}%`)
-      .order('tracking')
-      .order('part_number')
-      .limit(50);
 
-    if (showAll) {
-      query = query.in('warehouse_id', warehouseIds);
-    } else {
-      query = query.eq('warehouse_id', warehouseId!);
+    const rpcClient = supabase as unknown as {
+      rpc: (fn: string, params?: Record<string, unknown>) => Promise<{ data: any; error: any }>;
+    };
+
+    const { data, error } = await rpcClient.rpc('search_parcels_global', { p_search: s });
+
+    if (error) {
+      console.error('Global search error:', error);
+      setResults([]);
+      return;
     }
 
-    const { data } = await query;
-    setResults((data || []).map(mapParcel));
+    setResults(
+      (data || []).map((p: any): ParcelResult => ({
+        id: p.id,
+        tracking: p.tracking,
+        boutique: p.boutique,
+        box_name: p.box_name || null,
+        status: p.status,
+        is_missing: p.is_missing,
+        is_multi_part: p.is_multi_part ?? false,
+        part_number: p.part_number ?? 1,
+        total_parts: p.total_parts ?? 1,
+        warehouse_name: p.warehouse_name || null,
+        transfer_status: p.transfer_status || null,
+        destination_warehouse_name: p.destination_warehouse_name || null,
+      }))
+    );
   };
 
   const loadMissingParcels = async () => {
@@ -100,7 +104,22 @@ const SearchParcels: React.FC = () => {
     }
 
     const { data } = await query;
-    setMissingParcels((data || []).map(mapParcel));
+    setMissingParcels(
+      (data || []).map((p: any): ParcelResult => ({
+        id: p.id,
+        tracking: p.tracking,
+        boutique: p.boutique,
+        box_name: p.boxes?.name || null,
+        status: p.status,
+        is_missing: p.is_missing,
+        is_multi_part: p.is_multi_part ?? false,
+        part_number: p.part_number ?? 1,
+        total_parts: p.total_parts ?? 1,
+        warehouse_name: null,
+        transfer_status: null,
+        destination_warehouse_name: null,
+      }))
+    );
     setMissingLoading(false);
   };
 
@@ -113,6 +132,25 @@ const SearchParcels: React.FC = () => {
         {parcel.part_number}/{parcel.total_parts}
       </Badge>
     );
+  };
+
+  const TransferBadge = ({ parcel }: { parcel: ParcelResult }) => {
+    if (!parcel.transfer_status || parcel.transfer_status === 'in_stock') return null;
+    if (parcel.transfer_status === 'in_transit') {
+      return (
+        <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200 text-xs">
+          En transit {parcel.destination_warehouse_name ? `→ ${parcel.destination_warehouse_name}` : ''}
+        </Badge>
+      );
+    }
+    if (parcel.transfer_status === 'misrouted') {
+      return (
+        <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-200 text-xs">
+          Faux dispatch
+        </Badge>
+      );
+    }
+    return null;
   };
 
   return (
@@ -163,9 +201,12 @@ const SearchParcels: React.FC = () => {
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                     {p.boutique && <span className="font-medium text-foreground/80">{p.boutique}</span>}
                     {p.box_name && <span>📦 {p.box_name}</span>}
+                    {p.warehouse_name && (
+                      <span className="text-primary/70">📍 {p.warehouse_name}</span>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0 ml-2">
+                <div className="flex items-center gap-1 shrink-0 ml-2 flex-wrap justify-end">
                   <a
                     href={`https://yalidine.app/app/colis/index.php?source=cec&column=tracking&q=${encodeURIComponent(p.tracking)}`}
                     target="_blank"
@@ -177,6 +218,7 @@ const SearchParcels: React.FC = () => {
                     <img src="/yalidine-logo.png" alt="Yalidine" className="w-5 h-5" />
                   </a>
                   {p.is_missing && <Badge variant="destructive">Manquant</Badge>}
+                  <TransferBadge parcel={p} />
                   <Badge variant={p.status === 'given' ? 'secondary' : 'default'}>
                     {statusLabel(p.status || 'in_stock')}
                   </Badge>
