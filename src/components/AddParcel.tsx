@@ -92,6 +92,7 @@ const AddParcel: React.FC = () => {
 
     if (!existing || existing.length === 0) {
       toast.error('Ce tracking existe déjà dans ce dépôt');
+      playError();
       return;
     }
 
