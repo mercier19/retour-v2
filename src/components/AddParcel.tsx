@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWarehouseFilter } from '@/hooks/useWarehouseFilter';
+import { useConsolidationSettings } from '@/hooks/useConsolidationSettings';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, QrCode } from 'lucide-react';
+import { Plus, QrCode, Settings } from 'lucide-react';
 import { Box } from '@/types/database';
+import ConsolidationBanner from '@/components/ConsolidationBanner';
 
 const AddParcel: React.FC = () => {
   const { warehouseId, showAll } = useWarehouseFilter();
