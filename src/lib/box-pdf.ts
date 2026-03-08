@@ -97,7 +97,7 @@ export const printBoxPDF = async ({ boxId, boxName, warehouseName }: PrintBoxOpt
         cellPadding: 3,
         ...(useArabicFont ? { font: 'Amiri' } : {}),
       },
-      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
+      headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'normal', ...(useArabicFont ? { font: 'Amiri' } : {}) },
       alternateRowStyles: { fillColor: [245, 245, 245] },
       columnStyles: {
         2: { halign: useArabicFont ? 'right' : 'left' }, // Boutique column RTL if Arabic
