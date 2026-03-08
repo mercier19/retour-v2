@@ -237,6 +237,7 @@ const Statistics: React.FC = () => {
     { label: 'Boutiques uniques', value: uniqueBoutiques.size, icon: Store, color: 'text-amber-600' },
     { label: 'Boxes à éclater', value: boxesOverThreshold.length, icon: AlertTriangle, color: boxesOverThreshold.length > 0 ? 'text-destructive' : 'text-muted-foreground' },
     { label: 'Manquants', value: missingParcels.length, icon: AlertTriangle, color: missingParcels.length > 0 ? 'text-destructive' : 'text-muted-foreground' },
+  ];
 
   return (
     <div className="space-y-6">
