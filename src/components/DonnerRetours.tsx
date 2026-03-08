@@ -283,6 +283,16 @@ const DonnerRetours: React.FC = () => {
                   {parcel.added_by_name && <span>👤 {parcel.added_by_name}</span>}
                 </div>
               </div>
+              <a
+                href={`https://yalidine.app/app/colis/index.php?source=cec&column=tracking&q=${encodeURIComponent(parcel.tracking)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="inline-block hover:opacity-75 transition-opacity shrink-0"
+                title="Voir sur Yalidine"
+              >
+                <img src="/yalidine-logo.png" alt="Yalidine" className="w-5 h-5" />
+              </a>
               <Button
               size="sm"
               variant="ghost"
