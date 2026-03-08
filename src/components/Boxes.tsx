@@ -137,6 +137,9 @@ const Boxes: React.FC = () => {
                     </p>
                   </div>
                   <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" onClick={() => printBoxPDF({ boxId: box.id, boxName: box.name, warehouseName: currentWarehouse?.name || '' })} title="Imprimer PDF">
+                      <FileDown className="w-4 h-4" />
+                    </Button>
                     <Button size="icon" variant="ghost" onClick={() => { setEditingId(box.id); setEditName(box.name); setEditQuota(String(box.quota || '')); }}>
                       <Edit2 className="w-4 h-4" />
                     </Button>
