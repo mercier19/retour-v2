@@ -313,7 +313,7 @@ toast.error('Veuillez sélectionner une box');
       return;
     }
     if (!boxId) {
-      toast.error('Veuillez sélectionner une palette');
+      toast.error('Veuillez sélectionner une box');
       return;
     }
     const parts = qrInput.split(',');
