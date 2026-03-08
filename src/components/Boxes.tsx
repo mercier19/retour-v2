@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Plus, Trash2, Edit2, Check, X } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, X, FileDown } from 'lucide-react';
 import { Box } from '@/types/database';
+import { printBoxPDF } from '@/lib/box-pdf';
 
 const Boxes: React.FC = () => {
-  const { warehouseId, showAll } = useWarehouseFilter();
+  const { warehouseId, showAll, currentWarehouse } = useWarehouseFilter();
   const [boxes, setBoxes] = useState<(Box & { parcel_count: number })[]>([]);
   const [newName, setNewName] = useState('');
   const [newQuota, setNewQuota] = useState('');
@@ -136,6 +137,9 @@ const Boxes: React.FC = () => {
                     </p>
                   </div>
                   <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" onClick={() => printBoxPDF({ boxId: box.id, boxName: box.name, warehouseName: currentWarehouse?.name || '' })} title="Imprimer PDF">
+                      <FileDown className="w-4 h-4" />
+                    </Button>
                     <Button size="icon" variant="ghost" onClick={() => { setEditingId(box.id); setEditName(box.name); setEditQuota(String(box.quota || '')); }}>
                       <Edit2 className="w-4 h-4" />
                     </Button>
