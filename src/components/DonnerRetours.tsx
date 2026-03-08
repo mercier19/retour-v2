@@ -116,7 +116,7 @@ const DonnerRetours: React.FC = () => {
     setLoading(true);
     let dbQuery = supabase
       .from('parcels')
-      .select('id, tracking, boutique, box_id, is_missing, created_at, warehouse_id, status, added_by, is_multi_part, part_number, total_parts, transfer_status, destination_warehouse_id, boxes(name), profiles:added_by(full_name)')
+      .select('id, tracking, boutique, box_id, is_missing, created_at, warehouse_id, status, added_by, is_multi_part, part_number, total_parts, transfer_status, destination_warehouse_id, misrouted_at_warehouse_id, boxes(name), profiles:added_by(full_name)')
       .eq('status', 'in_stock');
 
     if (showAll) {
