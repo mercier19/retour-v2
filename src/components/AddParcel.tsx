@@ -150,6 +150,10 @@ const AddParcel: React.FC = () => {
       if (showAll) toast.error('Veuillez sélectionner un dépôt spécifique pour ajouter un colis');
       return;
     }
+    if (!boxId) {
+      toast.error('Veuillez sélectionner une palette');
+      return;
+    }
 
     const { data: { user } } = await supabase.auth.getUser();
     setLoading(true);
