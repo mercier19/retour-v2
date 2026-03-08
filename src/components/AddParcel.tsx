@@ -307,6 +307,7 @@ toast.error('Veuillez sélectionner une box');
       const msg = isMultiPart ? `Partie 1/${totalParts} ajoutée` : 'Colis ajouté avec succès';
       toast.success(msg);
       isMultiPart ? playPart() : playSuccess();
+      logUserAction({ action_type: 'add_parcel', warehouse_id: warehouseId!, action_data: { tracking: tracking.trim(), boutique: boutique.trim() || null, mode: 'manual' } });
       setTracking('');
       setBoutique('');
       setBoutiqueSearch('');
