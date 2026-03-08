@@ -192,6 +192,10 @@ const AddParcel: React.FC = () => {
       if (showAll) toast.error('Veuillez sélectionner un dépôt spécifique');
       return;
     }
+    if (!boxId) {
+      toast.error('Veuillez sélectionner une palette');
+      return;
+    }
     const parts = qrInput.split(',');
     const t = parts[1]?.trim();
     if (!t) { toast.error('Format QR invalide'); return; }
