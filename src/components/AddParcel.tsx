@@ -332,6 +332,9 @@ toast.error('Veuillez sélectionner une box');
 
     const { data: { user } } = await supabase.auth.getUser();
 
+    const sdHdRaw = parts[6]?.trim();
+    const deliveryType = sdHdRaw === '0' ? 'HD' : 'SD';
+
     const parcelData: any = {
       warehouse_id: warehouseId,
       tracking: t,
@@ -341,6 +344,7 @@ toast.error('Veuillez sélectionner une box');
       commune: parts[2]?.trim() || null,
       phone: parts[8]?.trim() || null,
       added_by: user?.id || null,
+      delivery_type: deliveryType,
     };
 
     const error = await insertParcel(parcelData);

@@ -66,7 +66,7 @@ const Statistics: React.FC = () => {
     if (warehouseIds.length === 0) return;
     setLoading(true);
 
-    let pQuery = supabase.from('parcels').select('id, tracking, boutique, wilaya, status, is_missing, created_at, given_at, box_id, updated_at');
+    let pQuery = supabase.from('parcels').select('id, tracking, boutique, wilaya, status, is_missing, created_at, given_at, box_id, updated_at, delivery_type');
     let bQuery = supabase.from('boxes').select('id, name, quota, warehouse_id');
 
     if (showAll) {
