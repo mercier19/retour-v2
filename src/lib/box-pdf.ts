@@ -53,6 +53,7 @@ export const printBoxPDF = async ({ boxId, boxName, warehouseName }: PrintBoxOpt
     if (amiriFontLoaded && amiriFontBase64) {
       doc.addFileToVFS('Amiri-Regular.ttf', amiriFontBase64);
       doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+      doc.addFont('Amiri-Regular.ttf', 'Amiri', 'bold');
     }
 
     const today = new Date().toLocaleDateString('fr-FR', {
