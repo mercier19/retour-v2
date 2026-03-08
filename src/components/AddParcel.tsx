@@ -19,6 +19,7 @@ import { useSound } from '@/hooks/useSound';
 const AddParcel: React.FC = () => {
   const { warehouseId, showAll, hasRole } = useWarehouseFilter();
   const consolidation = useConsolidationSettings();
+  const { playSuccess, playError, playPart } = useSound();
   const [showSettings, setShowSettings] = useState(false);
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [tracking, setTracking] = useState('');
