@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Trash2, Download, Archive } from 'lucide-react';
 import { Box } from '@/types/database';
 import { exportParcelsToExcel } from '@/lib/stock-export';
+import { logUserAction } from '@/utils/actionLogger';
 
 const StockControl: React.FC = () => {
   const { warehouseId, currentWarehouse, showAll, profile } = useWarehouseFilter();
@@ -47,6 +48,7 @@ const StockControl: React.FC = () => {
       );
       await supabase.from('parcels').delete().eq('box_id', selectedBox);
       toast.success(`${parcels.length} colis archivés de ${box?.name}`);
+      logUserAction({ action_type: 'clear_box', warehouse_id: warehouseId!, action_data: { box_name: box?.name, count: parcels.length } });
     } else {
       toast.info('Box déjà vide');
     }
@@ -74,6 +76,7 @@ const StockControl: React.FC = () => {
       );
       await supabase.from('parcels').delete().eq('warehouse_id', warehouseId);
       toast.success(`${parcels.length} colis archivés`);
+      logUserAction({ action_type: 'clear_all_stock', warehouse_id: warehouseId!, action_data: { count: parcels.length } });
     } else {
       toast.info('Stock déjà vide');
     }

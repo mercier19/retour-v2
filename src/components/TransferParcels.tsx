@@ -13,6 +13,7 @@ import {
 import { Search, ArrowRightLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import CopyTrackingButton from '@/components/CopyTrackingButton';
+import { logUserAction } from '@/utils/actionLogger';
 
 interface Warehouse {
   id: string;
@@ -168,6 +169,7 @@ const TransferParcels: React.FC = () => {
     }
 
     toast.success(`${ids.length} colis transféré(s) vers ${destinationWarehouse.name}`);
+    logUserAction({ action_type: 'transfer_initiated', warehouse_id: warehouseId || '', action_data: { destination: destinationId, count: ids.length } });
     setSelected(new Set());
     // Refresh
     doSearch();

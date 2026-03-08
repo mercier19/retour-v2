@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { Box, Warehouse } from '@/types/database';
 import ParcelHistoryDialog from '@/components/ParcelHistoryDialog';
 import CopyTrackingButton from '@/components/CopyTrackingButton';
+import { logUserAction } from '@/utils/actionLogger';
 
 interface ParcelWithDetails {
   id: string;
@@ -259,7 +260,11 @@ const DonnerRetours: React.FC = () => {
       }
     }
 
-    toast.success(`${selected.size} colis donné(s)${unselectedIds.length > 0 ? `, ${unselectedIds.length} marqué(s) manquant(s)` : ''}`);
+    const givenCount = selected.size;
+    const firstParcel = parcels.find(p => selected.has(p.id));
+    const wId = firstParcel?.warehouse_id || warehouseId || '';
+    toast.success(`${givenCount} colis donné(s)${unselectedIds.length > 0 ? `, ${unselectedIds.length} marqué(s) manquant(s)` : ''}`);
+    logUserAction({ action_type: 'give_to_boutique', warehouse_id: wId, action_data: { boutique: boutiqueName, count: givenCount } });
     setSelected(new Set());
     setSearch('');
     setParcels([]);
@@ -307,6 +312,7 @@ const DonnerRetours: React.FC = () => {
     await supabase.from('transfer_history').insert(historyRecords);
 
     toast.success(`${transferParcelIds.length} colis transféré(s) vers ${destWh?.name || 'destination'}`);
+    logUserAction({ action_type: 'transfer_initiated', warehouse_id: warehouseId || '', action_data: { destination: destinationId, count: transferParcelIds.length } });
     setTransferModalOpen(false);
     setTransferring(false);
 

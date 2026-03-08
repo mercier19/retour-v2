@@ -15,6 +15,7 @@ import { Plus, QrCode, Settings } from 'lucide-react';
 import { Box } from '@/types/database';
 import ConsolidationBanner from '@/components/ConsolidationBanner';
 import { useSound } from '@/hooks/useSound';
+import { logUserAction } from '@/utils/actionLogger';
 
 const AddParcel: React.FC = () => {
   const { warehouseId, showAll, hasRole } = useWarehouseFilter();
@@ -306,6 +307,7 @@ toast.error('Veuillez sélectionner une box');
       const msg = isMultiPart ? `Partie 1/${totalParts} ajoutée` : 'Colis ajouté avec succès';
       toast.success(msg);
       isMultiPart ? playPart() : playSuccess();
+      logUserAction({ action_type: 'add_parcel', warehouse_id: warehouseId!, action_data: { tracking: tracking.trim(), boutique: boutique.trim() || null, mode: 'manual' } });
       setTracking('');
       setBoutique('');
       setBoutiqueSearch('');
@@ -369,6 +371,7 @@ toast.error('Veuillez sélectionner une box');
     } else {
       toast.success(`Colis ${t} ajouté`);
       playSuccess();
+      logUserAction({ action_type: 'add_parcel', warehouse_id: warehouseId!, action_data: { tracking: t, boutique: boutiqueName, mode: 'qr' } });
     }
     setLoading(false);
   };

@@ -15,11 +15,13 @@ import {
 import {
   Package, TrendingUp, TrendingDown, Store, AlertTriangle,
   Trophy, Target, ArrowUpRight, ArrowDownRight, Building2,
-  Calendar, Search, Download, Clock,
+  Calendar, Search, Download, Clock, Users, FileText,
 } from 'lucide-react';
 import { format, subDays, startOfDay, startOfWeek, startOfMonth, parseISO, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { getWilayaName } from '@/lib/wilayas';
+import { toast } from 'sonner';
+import { generateAdvancedReport } from '@/utils/exportToPPTX';
 
 const COLORS = [
   'hsl(0, 78%, 47%)', 'hsl(38, 95%, 55%)', 'hsl(142, 72%, 40%)',
@@ -55,8 +57,25 @@ interface ParcelRow {
   transfer_status: string | null;
 }
 
+interface UserRankingItem {
+  userId: string;
+  userName: string;
+  total: number;
+  details: Record<string, number>;
+}
+
 type DateRange = 'today' | 'week' | 'month' | '30days' | 'all';
 type SortKey = 'received' | 'given' | 'give_rate' | 'missing' | 'missing_rate' | 'in_transit' | 'misrouted';
+
+const ACTION_LABELS: Record<string, string> = {
+  add_parcel: 'Ajouts',
+  give_to_boutique: 'Remises',
+  transfer_initiated: 'Transferts',
+  transfer_received: 'Réceptions',
+  clear_box: 'Vidage box',
+  clear_all_stock: 'Vidage stock',
+  mark_missing: 'Manquants',
+};
 
 const AdvancedStatistics: React.FC = () => {
   const { warehouseIds, hasRole } = useWarehouseFilter();
@@ -69,6 +88,9 @@ const AdvancedStatistics: React.FC = () => {
   const [sortAsc, setSortAsc] = useState(false);
   const [selectedWarehouses, setSelectedWarehouses] = useState<string[]>([]);
   const [boutiqueSearch, setBoutiqueSearch] = useState('');
+  const [userRanking, setUserRanking] = useState<UserRankingItem[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [exportingPPTX, setExportingPPTX] = useState(false);
 
   const isAllowed = hasRole('regional', 'super_admin');
 
@@ -86,7 +108,10 @@ const AdvancedStatistics: React.FC = () => {
   const activeWarehouseIds = selectedWarehouses.length > 0 ? selectedWarehouses : warehouseIds;
 
   useEffect(() => {
-    if (warehouseIds.length > 0 && isAllowed) loadData();
+    if (warehouseIds.length > 0 && isAllowed) {
+      loadData();
+      loadUserActivity();
+    }
   }, [warehouseIds.length, dateRange, isAllowed]);
 
   const loadData = async () => {
@@ -123,6 +148,59 @@ const AdvancedStatistics: React.FC = () => {
     }
     setParcels((parcelsRes.data as ParcelRow[]) || []);
     setLoading(false);
+  };
+
+  const loadUserActivity = async () => {
+    if (warehouseIds.length === 0) return;
+    setLoadingUsers(true);
+
+    const startDate = dateFilter ? dateFilter.toISOString() : null;
+
+    let query = supabase
+      .from('user_actions' as any)
+      .select('user_id, action_type')
+      .in('warehouse_id', warehouseIds);
+
+    if (startDate) query = query.gte('created_at', startDate);
+
+    const { data: actions } = await query.limit(5000);
+
+    if (!actions || actions.length === 0) {
+      setUserRanking([]);
+      setLoadingUsers(false);
+      return;
+    }
+
+    // Aggregate by user
+    const userMap = new Map<string, { total: number; details: Record<string, number> }>();
+    (actions as any[]).forEach((act: any) => {
+      if (!act.user_id) return;
+      if (!userMap.has(act.user_id)) userMap.set(act.user_id, { total: 0, details: {} });
+      const u = userMap.get(act.user_id)!;
+      u.total++;
+      u.details[act.action_type] = (u.details[act.action_type] || 0) + 1;
+    });
+
+    // Get user names
+    const userIds = Array.from(userMap.keys());
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', userIds);
+
+    const nameMap: Record<string, string> = {};
+    profiles?.forEach((p: any) => { nameMap[p.id] = p.full_name || p.id; });
+
+    const ranking: UserRankingItem[] = Array.from(userMap.entries())
+      .map(([userId, data]) => ({
+        userId,
+        userName: nameMap[userId] || userId.substring(0, 8),
+        ...data,
+      }))
+      .sort((a, b) => b.total - a.total);
+
+    setUserRanking(ranking);
+    setLoadingUsers(false);
   };
 
   // Filtered stats based on selected warehouses
@@ -288,6 +366,31 @@ const AdvancedStatistics: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  // Export PPTX
+  const exportPPTX = async () => {
+    setExportingPPTX(true);
+    try {
+      const dateLabels: Record<DateRange, string> = {
+        today: "Aujourd'hui",
+        week: 'Cette semaine',
+        month: 'Ce mois',
+        '30days': '30 derniers jours',
+        all: 'Tout',
+      };
+      const fileName = await generateAdvancedReport(
+        totals,
+        filteredStats,
+        userRanking,
+        dateLabels[dateRange],
+      );
+      toast.success(`Rapport "${fileName}" téléchargé`);
+    } catch (err) {
+      console.error('PPTX export error:', err);
+      toast.error("Erreur lors de l'export PPTX");
+    }
+    setExportingPPTX(false);
+  };
+
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(!sortAsc);
     else { setSortKey(key); setSortAsc(false); }
@@ -370,6 +473,9 @@ const AdvancedStatistics: React.FC = () => {
           <Button variant="outline" size="sm" onClick={exportCSV} className="h-8 text-xs gap-1">
             <Download className="w-3.5 h-3.5" /> CSV
           </Button>
+          <Button variant="outline" size="sm" onClick={exportPPTX} disabled={exportingPPTX} className="h-8 text-xs gap-1">
+            <FileText className="w-3.5 h-3.5" /> {exportingPPTX ? 'Export...' : 'PPTX'}
+          </Button>
         </div>
       </div>
 
@@ -393,6 +499,7 @@ const AdvancedStatistics: React.FC = () => {
       <Tabs defaultValue="performance" className="space-y-4">
         <TabsList>
           <TabsTrigger value="performance">Performance dépôts</TabsTrigger>
+          <TabsTrigger value="users">Activité utilisateurs</TabsTrigger>
           <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
         </TabsList>
 
@@ -484,7 +591,7 @@ const AdvancedStatistics: React.FC = () => {
                     {sortedStats.length === 0 ? (
                       <tr><td colSpan={8} className="text-center py-8 text-muted-foreground">Aucune donnée</td></tr>
                     ) : (
-                      sortedStats.map((s, idx) => {
+                      sortedStats.map((s) => {
                         const gr = s.received > 0 ? ((s.given / s.received) * 100) : 0;
                         const mr = s.received > 0 ? ((s.missing / s.received) * 100) : 0;
                         const isBestReceived = filteredStats.length > 1 && s.received === Math.max(...filteredStats.map(x => x.received));
@@ -535,6 +642,94 @@ const AdvancedStatistics: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* === USERS TAB === */}
+        <TabsContent value="users" className="space-y-6">
+          <Card className="glass-card">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Classement des utilisateurs par activité
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingUsers ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+                </div>
+              ) : userRanking.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8 text-sm">
+                  Aucune activité enregistrée pour cette période. Les actions seront suivies à partir de maintenant.
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="sticky top-0 bg-card z-10">
+                      <tr className="border-b border-border">
+                        <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground w-8">#</th>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">Utilisateur</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">Total</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">Ajouts</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">Remises</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">Transferts</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-muted-foreground">Autres</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {userRanking.slice(0, 20).map((u, i) => {
+                        const adds = u.details['add_parcel'] || 0;
+                        const gives = u.details['give_to_boutique'] || 0;
+                        const transfers = (u.details['transfer_initiated'] || 0) + (u.details['transfer_received'] || 0);
+                        const others = u.total - adds - gives - transfers;
+                        return (
+                          <tr key={u.userId} className="border-b border-border/50 hover:bg-secondary/30 transition-colors">
+                            <td className="px-3 py-2.5 text-muted-foreground font-medium">
+                              {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`}
+                            </td>
+                            <td className="px-3 py-2.5 font-medium">{u.userName}</td>
+                            <td className="px-3 py-2.5 text-center font-bold">{u.total.toLocaleString()}</td>
+                            <td className="px-3 py-2.5 text-center">{adds > 0 ? adds.toLocaleString() : '-'}</td>
+                            <td className="px-3 py-2.5 text-center">{gives > 0 ? gives.toLocaleString() : '-'}</td>
+                            <td className="px-3 py-2.5 text-center">{transfers > 0 ? transfers.toLocaleString() : '-'}</td>
+                            <td className="px-3 py-2.5 text-center text-muted-foreground">{others > 0 ? others.toLocaleString() : '-'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* User activity breakdown chart */}
+          {userRanking.length > 0 && (
+            <Card className="glass-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Activité par utilisateur</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={Math.max(200, userRanking.slice(0, 10).length * 40)}>
+                  <BarChart data={userRanking.slice(0, 10).map(u => ({
+                    name: u.userName.length > 15 ? u.userName.substring(0, 15) + '…' : u.userName,
+                    Ajouts: u.details['add_parcel'] || 0,
+                    Remises: u.details['give_to_boutique'] || 0,
+                    Transferts: (u.details['transfer_initiated'] || 0) + (u.details['transfer_received'] || 0),
+                  }))} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" tick={{ fontSize: 10 }} />
+                    <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 10 }} />
+                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 12 }} />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Bar dataKey="Ajouts" stackId="a" fill="hsl(215, 90%, 42%)" />
+                    <Bar dataKey="Remises" stackId="a" fill="hsl(142, 72%, 40%)" />
+                    <Bar dataKey="Transferts" stackId="a" fill="hsl(38, 95%, 55%)" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* === OVERVIEW TAB === */}
