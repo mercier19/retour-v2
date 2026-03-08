@@ -260,7 +260,11 @@ const DonnerRetours: React.FC = () => {
       }
     }
 
-    toast.success(`${selected.size} colis donné(s)${unselectedIds.length > 0 ? `, ${unselectedIds.length} marqué(s) manquant(s)` : ''}`);
+    const givenCount = selected.size;
+    const firstParcel = parcels.find(p => selected.has(p.id));
+    const wId = firstParcel?.warehouse_id || warehouseId || '';
+    toast.success(`${givenCount} colis donné(s)${unselectedIds.length > 0 ? `, ${unselectedIds.length} marqué(s) manquant(s)` : ''}`);
+    logUserAction({ action_type: 'give_to_boutique', warehouse_id: wId, action_data: { boutique: boutiqueName, count: givenCount } });
     setSelected(new Set());
     setSearch('');
     setParcels([]);
