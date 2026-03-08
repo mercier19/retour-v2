@@ -98,6 +98,7 @@ const TransferParcels: React.FC = () => {
         status: p.status,
         transfer_status: p.transfer_status,
         destination_warehouse_id: p.destination_warehouse_id,
+        misrouted_at_warehouse_id: p.misrouted_at_warehouse_id ?? null,
         warehouse_id: p.warehouse_id,
         is_multi_part: p.is_multi_part ?? false,
         part_number: p.part_number ?? 1,
