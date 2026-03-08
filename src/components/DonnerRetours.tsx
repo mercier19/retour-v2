@@ -16,6 +16,7 @@ import { Search, AlertTriangle, HandCoins, CheckSquare, XSquare, ChevronsUpDown,
 import { cn } from '@/lib/utils';
 import { Box, Warehouse } from '@/types/database';
 import ParcelHistoryDialog from '@/components/ParcelHistoryDialog';
+import CopyTrackingButton from '@/components/CopyTrackingButton';
 
 interface ParcelWithDetails {
   id: string;
