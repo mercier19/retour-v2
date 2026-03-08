@@ -312,6 +312,7 @@ const DonnerRetours: React.FC = () => {
     await supabase.from('transfer_history').insert(historyRecords);
 
     toast.success(`${transferParcelIds.length} colis transféré(s) vers ${destWh?.name || 'destination'}`);
+    logUserAction({ action_type: 'transfer_initiated', warehouse_id: warehouseId || '', action_data: { destination: destinationId, count: transferParcelIds.length } });
     setTransferModalOpen(false);
     setTransferring(false);
 

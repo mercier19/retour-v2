@@ -371,6 +371,7 @@ toast.error('Veuillez sélectionner une box');
     } else {
       toast.success(`Colis ${t} ajouté`);
       playSuccess();
+      logUserAction({ action_type: 'add_parcel', warehouse_id: warehouseId!, action_data: { tracking: t, boutique: boutiqueName, mode: 'qr' } });
     }
     setLoading(false);
   };

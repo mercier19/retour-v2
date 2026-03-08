@@ -76,6 +76,7 @@ const StockControl: React.FC = () => {
       );
       await supabase.from('parcels').delete().eq('warehouse_id', warehouseId);
       toast.success(`${parcels.length} colis archivés`);
+      logUserAction({ action_type: 'clear_all_stock', warehouse_id: warehouseId!, action_data: { count: parcels.length } });
     } else {
       toast.info('Stock déjà vide');
     }
