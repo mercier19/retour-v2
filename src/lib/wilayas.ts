@@ -11,9 +11,9 @@ export const WILAYAS: Record<string, string> = {
   '36': 'El Tarf', '37': 'Tindouf', '38': 'Tissemsilt', '39': 'El Oued',
   '40': 'Khenchela', '41': 'Souk Ahras', '42': 'Tipaza', '43': 'Mila',
   '44': 'Aïn Defla', '45': 'Naâma', '46': 'Aïn Témouchent', '47': 'Ghardaïa',
-  '48': 'Relizane', '49': 'El M\'hir', '50': 'El Meniaa', '51': 'Ouled Djellal',
-  '52': 'Bordj Badji Mokhtar', '53': 'Béni Abbès', '54': 'Timimoun',
-  '55': 'Touggourt', '56': 'Djanet', '57': 'In Salah', '58': 'In Guezzam',
+  '48': 'Relizane', '49': 'Timimoun', '50': 'Bordj Badji Mokhtar', '51': 'Ouled Djellal',
+  '52': 'Béni Abbès', '53': 'In Salah', '54': 'In Guezzam',
+  '55': 'Touggourt', '56': 'Djanet', '57': "El M'Ghair", '58': 'El Meniaa',
 };
 
 export function getWilayaName(code: string | null | undefined): string {
