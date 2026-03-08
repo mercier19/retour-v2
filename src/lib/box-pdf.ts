@@ -10,7 +10,7 @@ let amiriFontBase64 = '';
 const loadAmiriFont = async () => {
   if (amiriFontLoaded) return;
   try {
-    const response = await fetch('https://cdn.jsdelivr.net/npm/@fontsource/amiri@5.0.18/files/amiri-arabic-400-normal.woff');
+    const response = await fetch('https://cdn.jsdelivr.net/gh/google/fonts/ofl/amiri/Amiri-Regular.ttf');
     const buffer = await response.arrayBuffer();
     const bytes = new Uint8Array(buffer);
     let binary = '';

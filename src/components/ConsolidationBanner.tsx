@@ -143,7 +143,7 @@ const ConsolidationBanner: React.FC<ConsolidationBannerProps> = ({
               <PackageCheck className="w-5 h-5 text-yellow-600 shrink-0" />
               <p className="text-sm">
                 <span className="font-semibold">{s.boutique}</span> : {s.count} colis répartis dans{' '}
-                <span className="font-semibold">{s.boxCount} palettes</span>. Rassemblez-les ?
+                <span className="font-semibold">{s.boxCount} boxes</span>. Rassemblez-les ?
               </p>
             </div>
             <Button

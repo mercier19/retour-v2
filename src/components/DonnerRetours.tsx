@@ -461,9 +461,9 @@ const DonnerRetours: React.FC = () => {
                 </PopoverTrigger>
                 <PopoverContent className="w-48 p-0" align="end" onClick={(e) => e.stopPropagation()}>
                   <Command>
-                    <CommandInput placeholder="Palette..." />
+                    <CommandInput placeholder="Box..." />
                     <CommandList>
-                      <CommandEmpty>Aucune palette</CommandEmpty>
+                      <CommandEmpty>Aucune box</CommandEmpty>
                       <CommandGroup>
                         {boxes.filter(b => b.warehouse_id === parcel.warehouse_id).map((box) => (
                           <CommandItem key={box.id} value={box.name} disabled={box.id === parcel.box_id} onSelect={() => handleBoxTransfer(parcel.id, box.id)}>
