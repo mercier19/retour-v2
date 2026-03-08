@@ -253,6 +253,7 @@ const TransferParcels: React.FC = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-mono text-sm font-medium truncate">{p.tracking}</p>
+                    <CopyTrackingButton tracking={p.tracking} />
                     {p.is_multi_part && (
                       <Badge variant="outline" className="text-xs font-mono">{p.part_number}/{p.total_parts}</Badge>
                     )}
