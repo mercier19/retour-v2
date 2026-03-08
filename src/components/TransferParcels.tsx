@@ -29,6 +29,7 @@ interface ParcelItem {
   status: string | null;
   transfer_status: string | null;
   destination_warehouse_id: string | null;
+  misrouted_at_warehouse_id: string | null;
   warehouse_id: string;
   is_multi_part: boolean;
   part_number: number;
