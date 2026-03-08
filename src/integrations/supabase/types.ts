@@ -166,6 +166,7 @@ export type Database = {
           id: string
           is_missing: boolean | null
           is_multi_part: boolean
+          misrouted_at_warehouse_id: string | null
           part_number: number
           phone: string | null
           status: string | null
@@ -189,6 +190,7 @@ export type Database = {
           id?: string
           is_missing?: boolean | null
           is_multi_part?: boolean
+          misrouted_at_warehouse_id?: string | null
           part_number?: number
           phone?: string | null
           status?: string | null
@@ -212,6 +214,7 @@ export type Database = {
           id?: string
           is_missing?: boolean | null
           is_multi_part?: boolean
+          misrouted_at_warehouse_id?: string | null
           part_number?: number
           phone?: string | null
           status?: string | null
@@ -242,6 +245,13 @@ export type Database = {
           {
             foreignKeyName: "parcels_destination_warehouse_id_fkey"
             columns: ["destination_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "parcels_misrouted_at_warehouse_id_fkey"
+            columns: ["misrouted_at_warehouse_id"]
             isOneToOne: false
             referencedRelation: "warehouses"
             referencedColumns: ["id"]
@@ -289,6 +299,7 @@ export type Database = {
           id: string
           initiated_at: string
           initiated_by: string | null
+          misrouted_at_warehouse_id: string | null
           parcel_id: string
           status: string
           to_warehouse_id: string
@@ -299,6 +310,7 @@ export type Database = {
           id?: string
           initiated_at?: string
           initiated_by?: string | null
+          misrouted_at_warehouse_id?: string | null
           parcel_id: string
           status?: string
           to_warehouse_id: string
@@ -309,6 +321,7 @@ export type Database = {
           id?: string
           initiated_at?: string
           initiated_by?: string | null
+          misrouted_at_warehouse_id?: string | null
           parcel_id?: string
           status?: string
           to_warehouse_id?: string
@@ -326,6 +339,13 @@ export type Database = {
             columns: ["initiated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transfer_history_misrouted_at_warehouse_id_fkey"
+            columns: ["misrouted_at_warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
           {
