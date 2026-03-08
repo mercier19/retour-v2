@@ -92,7 +92,7 @@ const DonnerRetours: React.FC = () => {
         .eq('box_id', newBoxId)
         .eq('status', 'in_stock');
       if (count !== null && count >= targetBox.quota) {
-        toast.error(`La palette "${targetBox.name}" est pleine (${targetBox.quota}/${targetBox.quota})`);
+        toast.error(`La box "${targetBox.name}" est pleine (${targetBox.quota}/${targetBox.quota})`);
         return;
       }
     }
@@ -455,15 +455,15 @@ const DonnerRetours: React.FC = () => {
               {/* Box transfer popover */}
               <Popover open={boxTransferParcelId === parcel.id} onOpenChange={(o) => setBoxTransferParcelId(o ? parcel.id : null)}>
                 <PopoverTrigger asChild>
-                  <Button size="sm" variant="ghost" onClick={(e) => e.stopPropagation()} title="Changer de palette">
+                  <Button size="sm" variant="ghost" onClick={(e) => e.stopPropagation()} title="Changer de box">
                     📦
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-48 p-0" align="end" onClick={(e) => e.stopPropagation()}>
                   <Command>
-                    <CommandInput placeholder="Palette..." />
+                    <CommandInput placeholder="Box..." />
                     <CommandList>
-                      <CommandEmpty>Aucune palette</CommandEmpty>
+                      <CommandEmpty>Aucune box</CommandEmpty>
                       <CommandGroup>
                         {boxes.filter(b => b.warehouse_id === parcel.warehouse_id).map((box) => (
                           <CommandItem key={box.id} value={box.name} disabled={box.id === parcel.box_id} onSelect={() => handleBoxTransfer(parcel.id, box.id)}>

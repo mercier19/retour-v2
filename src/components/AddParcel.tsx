@@ -260,7 +260,7 @@ const AddParcel: React.FC = () => {
       return;
     }
     if (!boxId) {
-      toast.error('Veuillez sélectionner une palette');
+toast.error('Veuillez sélectionner une box');
       return;
     }
 
@@ -313,7 +313,7 @@ const AddParcel: React.FC = () => {
       return;
     }
     if (!boxId) {
-      toast.error('Veuillez sélectionner une palette');
+      toast.error('Veuillez sélectionner une box');
       return;
     }
     const parts = qrInput.split(',');
@@ -449,10 +449,10 @@ const AddParcel: React.FC = () => {
         <CardContent>
           {/* Box selector - required */}
           <div className="mb-4">
-            <Label>Palette *</Label>
+            <Label>Box *</Label>
             <Select value={boxId} onValueChange={setBoxId} required>
               <SelectTrigger className={!boxId ? 'border-destructive/50' : ''}>
-                <SelectValue placeholder="Sélectionner une palette" />
+                <SelectValue placeholder="Sélectionner une box" />
               </SelectTrigger>
               <SelectContent>
                 {boxes.map((box) => (
