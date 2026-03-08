@@ -267,7 +267,38 @@ const Statistics: React.FC = () => {
         ))}
       </div>
 
-      {/* Activity Chart */}
+      {/* SD vs HD Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 gap-3 max-w-md">
+        <Card className="glass-card border-l-4 border-l-blue-500">
+          <CardContent className="p-3">
+            <div className="flex items-start justify-between">
+              <div className="min-w-0">
+                <p className="text-[11px] text-muted-foreground">SD en stock</p>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <p className="text-xl font-bold">{sdInStock.length.toLocaleString()}</p>
+                  <span className="text-xs text-muted-foreground">{sdPct}%</span>
+                </div>
+              </div>
+              <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-600 shrink-0">SD</Badge>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="glass-card border-l-4 border-l-orange-500">
+          <CardContent className="p-3">
+            <div className="flex items-start justify-between">
+              <div className="min-w-0">
+                <p className="text-[11px] text-muted-foreground">HD en stock</p>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <p className="text-xl font-bold">{hdInStock.length.toLocaleString()}</p>
+                  <span className="text-xs text-muted-foreground">{hdPct}%</span>
+                </div>
+              </div>
+              <Badge variant="secondary" className="text-[10px] bg-orange-500/10 text-orange-600 shrink-0">HD</Badge>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card className="glass-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Activité des 30 derniers jours</CardTitle>
