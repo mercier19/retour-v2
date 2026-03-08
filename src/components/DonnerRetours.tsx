@@ -414,6 +414,7 @@ const DonnerRetours: React.FC = () => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-mono text-sm font-medium truncate">{parcel.tracking}</p>
+                  <CopyTrackingButton tracking={parcel.tracking} />
                   {parcel.is_multi_part && (
                     <Badge variant="outline" className="text-xs font-mono">{parcel.part_number}/{parcel.total_parts}</Badge>
                   )}
