@@ -287,7 +287,7 @@ toast.error('Veuillez sélectionner une box');
       tracking: tracking.trim(),
       box_id: boxId || null,
       boutique: boutique.trim() || null,
-      added_by: user?.id || null,
+      added_by: cachedUserId.current,
       is_multi_part: isMultiPart,
       part_number: 1,
       total_parts: isMultiPart ? totalParts : 1,
