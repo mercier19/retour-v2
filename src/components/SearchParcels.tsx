@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Search, AlertTriangle } from 'lucide-react';
 import ParcelHistoryDialog from '@/components/ParcelHistoryDialog';
+import CopyTrackingButton from '@/components/CopyTrackingButton';
 
 interface ParcelResult {
   id: string;
