@@ -108,7 +108,7 @@ const ConsolidationBanner: React.FC<ConsolidationBannerProps> = ({
       .single();
 
     if (boxError || !newBox) {
-      toast.error('Erreur lors de la création de la palette: ' + (boxError?.message || ''));
+      toast.error('Erreur lors de la création de la box: ' + (boxError?.message || ''));
       setConsolidating(null);
       return;
     }
