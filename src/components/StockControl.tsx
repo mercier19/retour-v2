@@ -10,7 +10,7 @@ import { Box } from '@/types/database';
 import { exportParcelsToExcel } from '@/lib/stock-export';
 
 const StockControl: React.FC = () => {
-  const { warehouseId, currentWarehouse, showAll } = useWarehouseFilter();
+  const { warehouseId, currentWarehouse, showAll, profile } = useWarehouseFilter();
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [selectedBox, setSelectedBox] = useState('');
 
