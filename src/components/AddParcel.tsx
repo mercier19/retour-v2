@@ -81,12 +81,31 @@ const AddParcel: React.FC = () => {
   };
 
   // Check if a scanned parcel is an incoming transfer
-  const checkIncomingTransfer = async (trackingNumber: string): Promise<'received' | 'misrouted' | 'not_transfer'> => {
+  const checkIncomingTransfer = async (trackingNumber: string): Promise<'received' | 'misrouted' | 'given' | 'error' | 'not_transfer'> => {
     if (!warehouseId) return 'not_transfer';
 
     const rpcClient = supabase as unknown as {
       rpc: (fn: string, params?: Record<string, unknown>) => Promise<{ data: any; error: any }>;
     };
+
+    // 0) Block parcels already given in current warehouse
+    const { data: isGiven, error: givenError } = await rpcClient.rpc('is_parcel_given', {
+      p_tracking: trackingNumber,
+      p_warehouse_id: warehouseId,
+    });
+
+    if (givenError) {
+      console.error('Erreur RPC is_parcel_given:', givenError);
+      toast.error('Erreur lors de la vérification du statut du colis');
+      playError();
+      return 'error';
+    }
+
+    if (isGiven) {
+      toast.error('Ce colis a déjà été donné à la boutique');
+      playError();
+      return 'given';
+    }
 
     // 1) Try receiving via SECURITY DEFINER RPC (bypasses SELECT RLS visibility issues)
     const { data: transitParcels, error: transitError } = await rpcClient.rpc('get_incoming_transfer', {
@@ -96,7 +115,9 @@ const AddParcel: React.FC = () => {
 
     if (transitError) {
       console.error('Erreur RPC get_incoming_transfer:', transitError);
-      return 'not_transfer';
+      toast.error('Erreur lors de la vérification du transfert entrant');
+      playError();
+      return 'error';
     }
 
     console.log('Transit parcels found via RPC:', transitParcels);
@@ -113,7 +134,7 @@ const AddParcel: React.FC = () => {
         console.error('Erreur RPC receive_incoming_transfer:', receiveError);
         toast.error('Erreur lors de la réception du colis en transfert');
         playError();
-        return 'misrouted';
+        return 'error';
       }
 
       toast.success(`Colis ${trackingNumber} reçu et ajouté au stock`);
