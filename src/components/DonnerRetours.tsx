@@ -230,11 +230,27 @@ const DonnerRetours: React.FC = () => {
         .in('id', unselectedIds);
     }
 
+    // Open Yalidine returns page if boutique mapping exists
+    const boutiqueName = search; // current boutique name from search
+    if (boutiqueName && currentWarehouse?.code) {
+      const { data: mapping } = await supabase
+        .from('boutique_mappings')
+        .select('external_id')
+        .eq('name', boutiqueName)
+        .maybeSingle();
+
+      if (mapping?.external_id) {
+        const url = `https://yalidine.app/app/sac/remettre_retour.php?s=${mapping.external_id}&hi=${currentWarehouse.code}`;
+        window.open(url, '_blank');
+      } else {
+        toast.warning('Lien Yalidine non disponible (ID boutique manquant)');
+      }
+    }
+
     toast.success(`${selected.size} colis donné(s)${unselectedIds.length > 0 ? `, ${unselectedIds.length} marqué(s) manquant(s)` : ''}`);
     setSelected(new Set());
     setSearch('');
     setParcels([]);
-  };
 
   // Transfer logic
   const openTransferModal = (parcelIds: string[]) => {
