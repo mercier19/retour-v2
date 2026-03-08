@@ -21,6 +21,7 @@ export type Database = {
           box_name: string | null
           commune: string | null
           created_at: string | null
+          delivery_type: string | null
           id: string
           is_multi_part: boolean
           part_number: number
@@ -37,6 +38,7 @@ export type Database = {
           box_name?: string | null
           commune?: string | null
           created_at?: string | null
+          delivery_type?: string | null
           id?: string
           is_multi_part?: boolean
           part_number?: number
@@ -53,6 +55,7 @@ export type Database = {
           box_name?: string | null
           commune?: string | null
           created_at?: string | null
+          delivery_type?: string | null
           id?: string
           is_multi_part?: boolean
           part_number?: number
@@ -161,6 +164,7 @@ export type Database = {
           box_id: string | null
           commune: string | null
           created_at: string
+          delivery_type: string | null
           destination_warehouse_id: string | null
           given_at: string | null
           id: string
@@ -185,6 +189,7 @@ export type Database = {
           box_id?: string | null
           commune?: string | null
           created_at?: string
+          delivery_type?: string | null
           destination_warehouse_id?: string | null
           given_at?: string | null
           id?: string
@@ -209,6 +214,7 @@ export type Database = {
           box_id?: string | null
           commune?: string | null
           created_at?: string
+          delivery_type?: string | null
           destination_warehouse_id?: string | null
           given_at?: string | null
           id?: string

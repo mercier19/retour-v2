@@ -37,6 +37,7 @@ interface ParcelRow {
   given_at: string | null;
   box_id: string | null;
   updated_at: string;
+  delivery_type: string | null;
 }
 
 interface BoxRow {
@@ -65,7 +66,7 @@ const Statistics: React.FC = () => {
     if (warehouseIds.length === 0) return;
     setLoading(true);
 
-    let pQuery = supabase.from('parcels').select('id, tracking, boutique, wilaya, status, is_missing, created_at, given_at, box_id, updated_at');
+    let pQuery = supabase.from('parcels').select('id, tracking, boutique, wilaya, status, is_missing, created_at, given_at, box_id, updated_at, delivery_type');
     let bQuery = supabase.from('boxes').select('id, name, quota, warehouse_id');
 
     if (showAll) {
@@ -90,6 +91,8 @@ const Statistics: React.FC = () => {
   const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
 
   const activeParcels = useMemo(() => parcels.filter(p => p.status !== 'given' && p.status !== 'cancelled'), [parcels]);
+  const sdInStock = useMemo(() => activeParcels.filter(p => p.delivery_type !== 'HD'), [activeParcels]);
+  const hdInStock = useMemo(() => activeParcels.filter(p => p.delivery_type === 'HD'), [activeParcels]);
   const addedToday = useMemo(() => parcels.filter(p => p.created_at?.startsWith(todayStr)), [parcels, todayStr]);
   const addedYesterday = useMemo(() => parcels.filter(p => p.created_at?.startsWith(yesterdayStr)), [parcels, yesterdayStr]);
   const addedThisWeek = useMemo(() => parcels.filter(p => parseISO(p.created_at) >= weekStart), [parcels, weekStart]);
@@ -215,6 +218,9 @@ const Statistics: React.FC = () => {
     );
   }
 
+  const sdPct = activeParcels.length > 0 ? ((sdInStock.length / activeParcels.length) * 100).toFixed(0) : '0';
+  const hdPct = activeParcels.length > 0 ? ((hdInStock.length / activeParcels.length) * 100).toFixed(0) : '0';
+
   const kpis = [
     { label: 'Colis actifs', value: activeParcels.length, icon: Package, color: 'text-primary' },
     { label: "Ajoutés aujourd'hui", value: addedToday.length, icon: TrendingUp, color: 'text-blue-600', delta: <DeltaBadge current={addedToday.length} previous={addedYesterday.length} /> },
@@ -261,7 +267,38 @@ const Statistics: React.FC = () => {
         ))}
       </div>
 
-      {/* Activity Chart */}
+      {/* SD vs HD Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-2 gap-3 max-w-md">
+        <Card className="glass-card border-l-4 border-l-blue-500">
+          <CardContent className="p-3">
+            <div className="flex items-start justify-between">
+              <div className="min-w-0">
+                <p className="text-[11px] text-muted-foreground">SD en stock</p>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <p className="text-xl font-bold">{sdInStock.length.toLocaleString()}</p>
+                  <span className="text-xs text-muted-foreground">{sdPct}%</span>
+                </div>
+              </div>
+              <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-600 shrink-0">SD</Badge>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="glass-card border-l-4 border-l-orange-500">
+          <CardContent className="p-3">
+            <div className="flex items-start justify-between">
+              <div className="min-w-0">
+                <p className="text-[11px] text-muted-foreground">HD en stock</p>
+                <div className="flex items-baseline gap-1.5 mt-1">
+                  <p className="text-xl font-bold">{hdInStock.length.toLocaleString()}</p>
+                  <span className="text-xs text-muted-foreground">{hdPct}%</span>
+                </div>
+              </div>
+              <Badge variant="secondary" className="text-[10px] bg-orange-500/10 text-orange-600 shrink-0">HD</Badge>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card className="glass-card">
         <CardHeader className="pb-2">
           <CardTitle className="text-base">Activité des 30 derniers jours</CardTitle>
