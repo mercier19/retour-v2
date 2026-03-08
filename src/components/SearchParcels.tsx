@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Search, AlertTriangle } from 'lucide-react';
 import ParcelHistoryDialog from '@/components/ParcelHistoryDialog';
+import CopyTrackingButton from '@/components/CopyTrackingButton';
 
 interface ParcelResult {
   id: string;
@@ -156,6 +157,7 @@ const SearchParcels: React.FC = () => {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center">
                     <p className="font-mono text-sm font-medium truncate">{p.tracking}</p>
+                    <CopyTrackingButton tracking={p.tracking} />
                     <PartBadge parcel={p} />
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
