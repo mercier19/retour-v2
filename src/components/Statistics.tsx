@@ -92,6 +92,7 @@ const Statistics: React.FC = () => {
   const yesterdayStr = format(yesterday, 'yyyy-MM-dd');
 
   const activeParcels = useMemo(() => parcels.filter(p => p.status !== 'given' && p.status !== 'cancelled'), [parcels]);
+  const missingParcels = useMemo(() => activeParcels.filter(p => p.is_missing), [activeParcels]);
   const sdInStock = useMemo(() => activeParcels.filter(p => p.delivery_type !== 'HD'), [activeParcels]);
   const hdInStock = useMemo(() => activeParcels.filter(p => p.delivery_type === 'HD'), [activeParcels]);
   const addedToday = useMemo(() => parcels.filter(p => p.created_at?.startsWith(todayStr)), [parcels, todayStr]);
