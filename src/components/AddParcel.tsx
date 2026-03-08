@@ -101,6 +101,7 @@ const AddParcel: React.FC = () => {
       const nextPart = latest.part_number + 1;
       if (nextPart > latest.total_parts) {
         toast.warning(`Toutes les ${latest.total_parts} parties de ce tracking ont déjà été reçues`);
+        playError();
         return;
       }
       const error = await insertParcel({
@@ -111,8 +112,10 @@ const AddParcel: React.FC = () => {
       });
       if (error) {
         toast.error(error.message);
+        playError();
       } else {
         toast.success(`Partie ${nextPart}/${latest.total_parts} ajoutée pour ${parcelData.tracking}`);
+        playPart();
       }
     } else {
       // Not multi-part yet — prompt user
