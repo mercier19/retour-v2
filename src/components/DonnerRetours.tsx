@@ -39,7 +39,7 @@ interface ParcelWithDetails {
 }
 
 const DonnerRetours: React.FC = () => {
-  const { warehouseId, warehouseIds, showAll, hasRole } = useWarehouseFilter();
+  const { warehouseId, warehouseIds, showAll, hasRole, currentWarehouse } = useWarehouseFilter();
   const { user, warehouses: userWarehouses } = useAuth();
   const [parcels, setParcels] = useState<ParcelWithDetails[]>([]);
   const [search, setSearch] = useState('');
