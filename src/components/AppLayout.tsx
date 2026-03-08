@@ -32,7 +32,7 @@ import {
   ArrowRightLeft } from
 'lucide-react';
 
-type Page = 'dashboard' | 'add' | 'boxes' | 'retours' | 'stock' | 'stats' | 'search' | 'transfer' | 'users' | 'warehouses';
+type Page = 'dashboard' | 'add' | 'boxes' | 'retours' | 'stock' | 'stats' | 'advanced-stats' | 'search' | 'transfer' | 'users' | 'warehouses';
 
 const AppLayout: React.FC = () => {
   const { profile, signOut } = useAuth();
