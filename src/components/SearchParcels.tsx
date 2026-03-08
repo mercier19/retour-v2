@@ -200,7 +200,17 @@ const SearchParcels: React.FC = () => {
                     {p.box_name && <span>📦 {p.box_name}</span>}
                   </div>
                 </div>
-                <div className="flex gap-1 shrink-0 ml-2">
+                <div className="flex items-center gap-1 shrink-0 ml-2">
+                  <a
+                    href={`https://yalidine.app/app/colis/index.php?source=cec&column=tracking&q=${encodeURIComponent(p.tracking)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-block hover:opacity-75 transition-opacity"
+                    title="Voir sur Yalidine"
+                  >
+                    <img src="/yalidine-logo.png" alt="Yalidine" className="w-5 h-5" />
+                  </a>
                   {p.is_missing && <Badge variant="destructive">Manquant</Badge>}
                   <Badge variant={p.status === 'given' ? 'secondary' : 'default'}>
                     {statusLabel(p.status || 'in_stock')}
