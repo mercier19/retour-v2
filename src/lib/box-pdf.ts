@@ -3,29 +3,6 @@ import autoTable from 'jspdf-autotable';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-// Amiri font for Arabic support - loaded from CDN
-let amiriFontLoaded = false;
-let amiriFontBase64 = '';
-
-const loadAmiriFont = async () => {
-  if (amiriFontLoaded) return;
-  try {
-    const response = await fetch('https://cdn.jsdelivr.net/gh/google/fonts/ofl/amiri/Amiri-Regular.ttf');
-    const buffer = await response.arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    amiriFontBase64 = btoa(binary);
-    amiriFontLoaded = true;
-  } catch {
-    console.warn('Could not load Amiri font, Arabic text may not render correctly');
-  }
-};
-
-const hasArabic = (text: string) => /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
-
 interface PrintBoxOptions {
   boxId: string;
   boxName: string;
@@ -34,27 +11,15 @@ interface PrintBoxOptions {
 
 export const printBoxPDF = async ({ boxId, boxName, warehouseName }: PrintBoxOptions) => {
   try {
-    // Load Arabic font in parallel with data fetch
-    const [fontResult, parcelsResult] = await Promise.all([
-      loadAmiriFont(),
-      supabase
-        .from('parcels')
-        .select('tracking, boutique, created_at, added_by, profiles:added_by(full_name)')
-        .eq('box_id', boxId)
-        .order('boutique', { ascending: true, nullsFirst: false }),
-    ]);
+    const { data: parcels, error } = await supabase
+      .from('parcels')
+      .select('tracking, boutique, created_at, added_by, profiles:added_by(full_name)')
+      .eq('box_id', boxId)
+      .order('boutique', { ascending: true, nullsFirst: false });
 
-    const { data: parcels, error } = parcelsResult;
     if (error) throw error;
 
     const doc = new jsPDF();
-
-    // Register Amiri font if loaded
-    if (amiriFontLoaded && amiriFontBase64) {
-      doc.addFileToVFS('Amiri-Regular.ttf', amiriFontBase64);
-      doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
-      doc.addFont('Amiri-Regular.ttf', 'Amiri', 'bold');
-    }
 
     const today = new Date().toLocaleDateString('fr-FR', {
       year: 'numeric',
@@ -86,8 +51,6 @@ export const printBoxPDF = async ({ boxId, boxName, warehouseName }: PrintBoxOpt
       new Date(p.created_at).toLocaleDateString('fr-FR'),
     ]);
 
-    const useArabicFont = amiriFontLoaded && (parcels || []).some((p: any) => hasArabic(p.boutique || ''));
-
     autoTable(doc, {
       startY: 72,
       head: [['#', 'Tracking', 'Boutique', 'Ajouté par', "Date d'ajout"]],
@@ -95,13 +58,9 @@ export const printBoxPDF = async ({ boxId, boxName, warehouseName }: PrintBoxOpt
       styles: {
         fontSize: 9,
         cellPadding: 3,
-        ...(useArabicFont ? { font: 'Amiri' } : {}),
       },
-      headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'normal', ...(useArabicFont ? { font: 'Amiri' } : {}) },
+      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
       alternateRowStyles: { fillColor: [245, 245, 245] },
-      columnStyles: {
-        2: { halign: useArabicFont ? 'right' : 'left' }, // Boutique column RTL if Arabic
-      },
     });
 
     doc.save(`${boxName}_${today.replace(/ /g, '_')}.pdf`);
