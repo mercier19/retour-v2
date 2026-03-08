@@ -1,19 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWarehouseFilter } from '@/hooks/useWarehouseFilter';
+import { useConsolidationSettings } from '@/hooks/useConsolidationSettings';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus, QrCode } from 'lucide-react';
+import { Plus, QrCode, Settings } from 'lucide-react';
 import { Box } from '@/types/database';
+import ConsolidationBanner from '@/components/ConsolidationBanner';
 
 const AddParcel: React.FC = () => {
-  const { warehouseId, showAll } = useWarehouseFilter();
+  const { warehouseId, showAll, hasRole } = useWarehouseFilter();
+  const consolidation = useConsolidationSettings();
+  const [showSettings, setShowSettings] = useState(false);
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [tracking, setTracking] = useState('');
   const [boxId, setBoxId] = useState('');
@@ -245,7 +250,20 @@ const AddParcel: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Ajouter des colis</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold">Ajouter des colis</h1>
+          {hasRole('chef_agence', 'regional', 'super_admin') && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setShowSettings(!showSettings)}
+              title="Paramètres de regroupement"
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
         <div className="flex gap-2">
           <Button variant={mode === 'manual' ? 'default' : 'outline'} size="sm" onClick={() => setMode('manual')}>
             <Plus className="w-4 h-4 mr-1" /> Manuel
@@ -255,6 +273,46 @@ const AddParcel: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* Consolidation settings panel */}
+      {showSettings && hasRole('chef_agence', 'regional', 'super_admin') && (
+        <Card className="border-muted">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="consolidation-toggle" className="cursor-pointer">
+                Activer suggestion de regroupement
+              </Label>
+              <Switch
+                id="consolidation-toggle"
+                checked={consolidation.enabled}
+                onCheckedChange={consolidation.setEnabled}
+              />
+            </div>
+            {consolidation.enabled && (
+              <div className="flex items-center gap-3">
+                <Label>Seuil (nombre de colis)</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  value={consolidation.threshold}
+                  onChange={(e) => consolidation.setThreshold(parseInt(e.target.value) || 10)}
+                  className="w-20"
+                />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Consolidation suggestions */}
+      {warehouseId && (
+        <ConsolidationBanner
+          warehouseId={warehouseId}
+          threshold={consolidation.threshold}
+          enabled={consolidation.enabled}
+          onConsolidated={loadBoxes}
+        />
+      )}
 
       <Card className="glass-card">
         <CardHeader>
