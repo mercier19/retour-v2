@@ -455,7 +455,7 @@ const DonnerRetours: React.FC = () => {
               {/* Box transfer popover */}
               <Popover open={boxTransferParcelId === parcel.id} onOpenChange={(o) => setBoxTransferParcelId(o ? parcel.id : null)}>
                 <PopoverTrigger asChild>
-                  <Button size="sm" variant="ghost" onClick={(e) => e.stopPropagation()} title="Changer de palette">
+                  <Button size="sm" variant="ghost" onClick={(e) => e.stopPropagation()} title="Changer de box">
                     📦
                   </Button>
                 </PopoverTrigger>
