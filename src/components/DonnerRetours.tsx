@@ -155,6 +155,7 @@ const DonnerRetours: React.FC = () => {
         total_parts: p.total_parts ?? 1,
         transfer_status: p.transfer_status ?? 'in_stock',
         destination_warehouse_id: p.destination_warehouse_id,
+        misrouted_at_warehouse_id: p.misrouted_at_warehouse_id ?? null,
       })));
     }
     setLoading(false);
