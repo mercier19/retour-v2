@@ -93,15 +93,12 @@ const AddParcel: React.FC = () => {
   const checkIncomingTransfer = async (trackingNumber: string): Promise<'received' | 'misrouted' | 'given' | 'error' | 'not_transfer'> => {
     if (!warehouseId) return 'not_transfer';
 
-    const rpcClient = supabase as unknown as {
-      rpc: (fn: string, params?: Record<string, unknown>) => Promise<{ data: any; error: any }>;
-    };
-
     // 0) Block parcels already given in current warehouse
-    const { data: isGiven, error: givenError } = await rpcClient.rpc('is_parcel_given', {
-      p_tracking: trackingNumber,
-      p_warehouse_id: warehouseId,
-    });
+    const { data: isGiven, error: givenError } = await supabase
+      .rpc('is_parcel_given', {
+        p_tracking: trackingNumber,
+        p_warehouse_id: warehouseId,
+      });
 
     if (givenError) {
       console.error('Erreur RPC is_parcel_given:', givenError);
