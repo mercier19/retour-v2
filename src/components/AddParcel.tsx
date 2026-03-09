@@ -357,12 +357,18 @@ toast.error('Veuillez sélectionner une box');
       delivery_type: deliveryType,
     };
 
-    // Try insert first (fast path for most scans)
+    // Check incoming transfer BEFORE insert attempt
+    const transferResult = await checkIncomingTransfer(t);
+    if (transferResult !== 'not_transfer') {
+      setLoading(false);
+      return;
+    }
+
+    // Try insert (fast path for most scans)
     const error = await insertParcel(parcelData);
 
     if (error) {
       if (error.code === '23505') {
-        // Only check transfers on duplicate — avoids extra DB calls for new parcels
         await handleDuplicate(parcelData);
       } else {
         toast.error(error.message);
