@@ -532,6 +532,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      resolve_misrouted_parcel: {
+        Args: {
+          p_accept_in_current: boolean
+          p_box_id: string
+          p_current_warehouse_id: string
+          p_parcel_id: string
+        }
+        Returns: undefined
+      }
       search_parcels_global: {
         Args: { p_search: string }
         Returns: {
