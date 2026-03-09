@@ -179,6 +179,21 @@ const AddParcel: React.FC = () => {
       return 'misrouted';
     }
 
+    // 3) Check if parcel already exists in this warehouse (misrouted or duplicate)
+    const { data: existingHere } = await supabase
+      .from('parcels')
+      .select('id, transfer_status')
+      .eq('tracking', trackingNumber)
+      .eq('warehouse_id', warehouseId);
+
+    if (existingHere && existingHere.length > 0) {
+      if (existingHere[0].transfer_status === 'misrouted') {
+        toast.error('Colis mal dirigé présent ici. Corrigez-le depuis le tableau de bord.');
+        playError();
+        return 'error';
+      }
+    }
+
     return 'not_transfer';
   };
 
