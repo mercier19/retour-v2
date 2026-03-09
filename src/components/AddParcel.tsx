@@ -130,7 +130,7 @@ const AddParcel: React.FC = () => {
 
     if (transitParcels && transitParcels.length > 0) {
       const parcel = transitParcels[0];
-      const { error: receiveError } = await rpcClient.rpc('receive_incoming_transfer', {
+      const { error: receiveError } = await (supabase.rpc as any)('receive_incoming_transfer', {
         p_parcel_id: parcel.id,
         p_new_warehouse_id: warehouseId,
         p_box_id: boxId || null,
