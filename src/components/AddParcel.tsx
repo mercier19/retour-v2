@@ -114,7 +114,7 @@ const AddParcel: React.FC = () => {
     }
 
     // 1) Try receiving via SECURITY DEFINER RPC (bypasses SELECT RLS visibility issues)
-    const { data: transitParcels, error: transitError } = await rpcClient.rpc('get_incoming_transfer', {
+    const { data: transitParcels, error: transitError } = await (supabase.rpc as any)('get_incoming_transfer', {
       p_tracking: trackingNumber,
       p_destination_warehouse_id: warehouseId,
     });
