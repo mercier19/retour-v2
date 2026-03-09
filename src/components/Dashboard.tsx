@@ -64,18 +64,10 @@ const Dashboard: React.FC = () => {
 
   const loadMisroutedParcels = async () => {
     if (warehouseIds.length === 0) return;
-    let query = supabase
-      .from('parcels')
-      .select('id, tracking, destination_warehouse_id, misrouted_at_warehouse_id, boutique, warehouse_id')
-      .eq('transfer_status', 'misrouted');
-
-    // Filter by misrouted_at_warehouse_id (where the parcel physically is)
-    if (showAll) {
-      query = query.in('misrouted_at_warehouse_id', warehouseIds);
-    } else {
-      query = query.eq('misrouted_at_warehouse_id', warehouseId!);
-    }
-    const { data } = await query;
+    const targetIds = showAll ? warehouseIds : [warehouseId!];
+    const { data } = await (supabase.rpc as any)('get_misrouted_parcels_at_warehouse', {
+      p_warehouse_ids: targetIds,
+    });
     setMisroutedParcels((data as MisroutedParcel[]) || []);
   };
 
