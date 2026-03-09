@@ -2,8 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWarehouseFilter } from '@/hooks/useWarehouseFilter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, BoxIcon, AlertTriangle, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Package, BoxIcon, AlertTriangle, TrendingUp, Wrench } from 'lucide-react';
 import { Box } from '@/types/database';
+import { toast } from 'sonner';
+
+interface MisroutedParcel {
+  id: string;
+  tracking: string;
+  destination_warehouse_id: string | null;
+  misrouted_at_warehouse_id: string | null;
+  boutique: string | null;
+}
 
 const Dashboard: React.FC = () => {
   const { warehouseId, warehouseIds, showAll } = useWarehouseFilter();
@@ -12,17 +26,52 @@ const Dashboard: React.FC = () => {
   const [missingCount, setMissingCount] = useState(0);
   const [todayCount, setTodayCount] = useState(0);
   const [boxes, setBoxes] = useState<(Box & { parcel_count: number })[]>([]);
+  const [misroutedParcels, setMisroutedParcels] = useState<MisroutedParcel[]>([]);
+  const [warehouseNames, setWarehouseNames] = useState<Record<string, string>>({});
+
+  // Resolve modal state
+  const [showResolveModal, setShowResolveModal] = useState(false);
+  const [selectedMisrouted, setSelectedMisrouted] = useState<MisroutedParcel | null>(null);
+  const [acceptHere, setAcceptHere] = useState(true);
+  const [targetBoxId, setTargetBoxId] = useState('');
+  const [resolving, setResolving] = useState(false);
 
   useEffect(() => {
     if (warehouseIds.length === 0) return;
     loadStats();
+    loadMisroutedParcels();
   }, [warehouseId, showAll, warehouseIds.length]);
+
+  useEffect(() => {
+    loadWarehouseNames();
+  }, []);
 
   const applyWarehouseFilter = (query: any) => {
     if (showAll) {
       return query.in('warehouse_id', warehouseIds);
     }
     return query.eq('warehouse_id', warehouseId);
+  };
+
+  const loadWarehouseNames = async () => {
+    const { data } = await supabase.from('warehouses').select('id, name');
+    if (data) {
+      const map: Record<string, string> = {};
+      data.forEach((w: any) => { map[w.id] = w.name; });
+      setWarehouseNames(map);
+    }
+  };
+
+  const loadMisroutedParcels = async () => {
+    if (warehouseIds.length === 0) return;
+    let query = supabase
+      .from('parcels')
+      .select('id, tracking, destination_warehouse_id, misrouted_at_warehouse_id, boutique')
+      .eq('transfer_status', 'misrouted');
+
+    query = applyWarehouseFilter(query);
+    const { data } = await query;
+    setMisroutedParcels((data as MisroutedParcel[]) || []);
   };
 
   const loadStats = async () => {
@@ -52,6 +101,35 @@ const Dashboard: React.FC = () => {
       );
       setBoxes(boxesWithCounts);
     }
+  };
+
+  const handleResolveMisroute = async () => {
+    if (!selectedMisrouted || !warehouseId) return;
+    setResolving(true);
+
+    const { error } = await (supabase.rpc as any)('resolve_misrouted_parcel', {
+      p_parcel_id: selectedMisrouted.id,
+      p_current_warehouse_id: warehouseId,
+      p_box_id: acceptHere ? targetBoxId : null,
+      p_accept_in_current: acceptHere,
+    });
+
+    if (error) {
+      toast.error('Erreur : ' + error.message);
+    } else {
+      toast.success(acceptHere ? 'Colis accepté dans ce dépôt' : 'Colis renvoyé vers sa destination');
+      setShowResolveModal(false);
+      loadMisroutedParcels();
+      loadStats();
+    }
+    setResolving(false);
+  };
+
+  const openResolveModal = (parcel: MisroutedParcel) => {
+    setSelectedMisrouted(parcel);
+    setAcceptHere(true);
+    setTargetBoxId('');
+    setShowResolveModal(true);
   };
 
   const stats = [
@@ -93,6 +171,36 @@ const Dashboard: React.FC = () => {
         </Card>
       )}
 
+      {/* Misrouted parcels section */}
+      {misroutedParcels.length > 0 && (
+        <Card className="border-orange-500/50 bg-orange-500/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Wrench className="w-5 h-5 text-orange-500" />
+              {misroutedParcels.length} colis mal dirigé(s)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {misroutedParcels.map((parcel) => (
+                <div key={parcel.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary/50 border border-border/50">
+                  <div>
+                    <p className="font-mono text-sm font-medium">{parcel.tracking}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Destination : {warehouseNames[parcel.destination_warehouse_id || ''] || 'Inconnue'}
+                      {parcel.boutique && ` • ${parcel.boutique}`}
+                    </p>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => openResolveModal(parcel)}>
+                    <Wrench className="w-3 h-3 mr-1" /> Corriger
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="glass-card">
         <CardHeader>
           <CardTitle className="text-lg">Boxes {showAll ? 'de tous les dépôts' : 'du dépôt'}</CardTitle>
@@ -114,6 +222,57 @@ const Dashboard: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Resolve misrouted modal */}
+      <Dialog open={showResolveModal} onOpenChange={setShowResolveModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Résoudre le colis mal dirigé</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm">
+              Tracking : <span className="font-mono font-medium">{selectedMisrouted?.tracking}</span>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Destination prévue : {warehouseNames[selectedMisrouted?.destination_warehouse_id || ''] || 'Inconnue'}
+            </p>
+
+            <RadioGroup value={acceptHere ? 'accept' : 'resend'} onValueChange={(v) => setAcceptHere(v === 'accept')}>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="accept" id="accept" />
+                <Label htmlFor="accept">Accepter ici (devient stock)</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="resend" id="resend" />
+                <Label htmlFor="resend">Renvoyer vers la destination</Label>
+              </div>
+            </RadioGroup>
+
+            {acceptHere && (
+              <div>
+                <Label>Choisir une boîte</Label>
+                <Select value={targetBoxId} onValueChange={setTargetBoxId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une boîte" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {boxes.map((b) => (
+                      <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowResolveModal(false)}>Annuler</Button>
+              <Button onClick={handleResolveMisroute} disabled={resolving || (acceptHere && !targetBoxId)}>
+                {resolving ? 'En cours...' : 'Confirmer'}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
