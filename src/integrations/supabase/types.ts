@@ -519,6 +519,17 @@ export type Database = {
           wilaya: string
         }[]
       }
+      get_misrouted_parcels_at_warehouse: {
+        Args: { p_warehouse_ids: string[] }
+        Returns: {
+          boutique: string
+          destination_warehouse_id: string
+          id: string
+          misrouted_at_warehouse_id: string
+          tracking: string
+          warehouse_id: string
+        }[]
+      }
       is_parcel_given: {
         Args: { p_tracking: string; p_warehouse_id: string }
         Returns: boolean

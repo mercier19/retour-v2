@@ -64,13 +64,10 @@ const Dashboard: React.FC = () => {
 
   const loadMisroutedParcels = async () => {
     if (warehouseIds.length === 0) return;
-    let query = supabase
-      .from('parcels')
-      .select('id, tracking, destination_warehouse_id, misrouted_at_warehouse_id, boutique')
-      .eq('transfer_status', 'misrouted');
-
-    query = applyWarehouseFilter(query);
-    const { data } = await query;
+    const targetIds = showAll ? warehouseIds : [warehouseId!];
+    const { data } = await (supabase.rpc as any)('get_misrouted_parcels_at_warehouse', {
+      p_warehouse_ids: targetIds,
+    });
     setMisroutedParcels((data as MisroutedParcel[]) || []);
   };
 
