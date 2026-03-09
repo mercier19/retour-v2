@@ -93,15 +93,12 @@ const AddParcel: React.FC = () => {
   const checkIncomingTransfer = async (trackingNumber: string): Promise<'received' | 'misrouted' | 'given' | 'error' | 'not_transfer'> => {
     if (!warehouseId) return 'not_transfer';
 
-    const rpcClient = supabase as unknown as {
-      rpc: (fn: string, params?: Record<string, unknown>) => Promise<{ data: any; error: any }>;
-    };
-
     // 0) Block parcels already given in current warehouse
-    const { data: isGiven, error: givenError } = await rpcClient.rpc('is_parcel_given', {
-      p_tracking: trackingNumber,
-      p_warehouse_id: warehouseId,
-    });
+    const { data: isGiven, error: givenError } = await supabase
+      .rpc('is_parcel_given', {
+        p_tracking: trackingNumber,
+        p_warehouse_id: warehouseId,
+      });
 
     if (givenError) {
       console.error('Erreur RPC is_parcel_given:', givenError);
@@ -117,7 +114,7 @@ const AddParcel: React.FC = () => {
     }
 
     // 1) Try receiving via SECURITY DEFINER RPC (bypasses SELECT RLS visibility issues)
-    const { data: transitParcels, error: transitError } = await rpcClient.rpc('get_incoming_transfer', {
+    const { data: transitParcels, error: transitError } = await (supabase.rpc as any)('get_incoming_transfer', {
       p_tracking: trackingNumber,
       p_destination_warehouse_id: warehouseId,
     });
@@ -133,7 +130,7 @@ const AddParcel: React.FC = () => {
 
     if (transitParcels && transitParcels.length > 0) {
       const parcel = transitParcels[0];
-      const { error: receiveError } = await rpcClient.rpc('receive_incoming_transfer', {
+      const { error: receiveError } = await (supabase.rpc as any)('receive_incoming_transfer', {
         p_parcel_id: parcel.id,
         p_new_warehouse_id: warehouseId,
         p_box_id: boxId || null,
@@ -357,12 +354,18 @@ toast.error('Veuillez sélectionner une box');
       delivery_type: deliveryType,
     };
 
-    // Try insert first (fast path for most scans)
+    // Check incoming transfer BEFORE insert attempt
+    const transferResult = await checkIncomingTransfer(t);
+    if (transferResult !== 'not_transfer') {
+      setLoading(false);
+      return;
+    }
+
+    // Try insert (fast path for most scans)
     const error = await insertParcel(parcelData);
 
     if (error) {
       if (error.code === '23505') {
-        // Only check transfers on duplicate — avoids extra DB calls for new parcels
         await handleDuplicate(parcelData);
       } else {
         toast.error(error.message);
