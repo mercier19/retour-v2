@@ -234,14 +234,15 @@ const DonnerRetours: React.FC = () => {
     // Open Yalidine returns page if boutique mapping exists
     const boutiqueName = search;
     if (boutiqueName) {
-      // Resolve warehouse code: use currentWarehouse or look up from first selected parcel
-      let whCode = currentWarehouse?.code;
+      // Resolve warehouse code from the first selected parcel's warehouse
+      const firstSelectedParcel = parcels.find(p => selected.has(p.id));
+      let whCode: string | undefined;
+      if (firstSelectedParcel) {
+        const wh = allWarehouses.find(w => w.id === firstSelectedParcel.warehouse_id);
+        whCode = wh?.code;
+      }
       if (!whCode) {
-        const firstParcel = parcels.find(p => selected.has(p.id));
-        if (firstParcel) {
-          const wh = allWarehouses.find(w => w.id === firstParcel.warehouse_id);
-          whCode = wh?.code;
-        }
+        whCode = currentWarehouse?.code;
       }
 
       const { data: mapping } = await supabase
