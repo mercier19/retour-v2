@@ -34,7 +34,13 @@ export const useConsolidationSettings = () => {
   };
 
   const setEnabledAndSave = (v: boolean) => save(v, threshold);
-  const setThresholdAndSave = (v: number) => save(enabled, Math.max(1, v));
+  const setThresholdAndSave = (v: number | null) => {
+    if (v === null) {
+      setThreshold(1);
+      return;
+    }
+    save(enabled, Math.max(1, v));
+  };
 
   return { enabled, threshold, setEnabled: setEnabledAndSave, setThreshold: setThresholdAndSave };
 };

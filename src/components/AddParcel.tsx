@@ -18,7 +18,7 @@ import { useSound } from '@/hooks/useSound';
 import { logUserAction } from '@/utils/actionLogger';
 
 const AddParcel: React.FC = () => {
-  const { warehouseId, showAll, hasRole } = useWarehouseFilter();
+  const { warehouseId, warehouseIds, showAll, hasRole } = useWarehouseFilter();
   const consolidation = useConsolidationSettings();
   const { playSuccess, playError, playPart } = useSound();
   const [showSettings, setShowSettings] = useState(false);
@@ -455,7 +455,17 @@ toast.error('Veuillez sélectionner une box');
                   type="number"
                   min={1}
                   value={consolidation.threshold}
-                  onChange={(e) => consolidation.setThreshold(parseInt(e.target.value) || 10)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === '') {
+                      consolidation.setThreshold(null);
+                    } else {
+                      consolidation.setThreshold(parseInt(val));
+                    }
+                  }}
+                  onBlur={() => {
+                    if (consolidation.threshold < 1) consolidation.setThreshold(1);
+                  }}
                   className="w-20"
                 />
               </div>
@@ -465,9 +475,9 @@ toast.error('Veuillez sélectionner une box');
       )}
 
       {/* Consolidation suggestions */}
-      {warehouseId && (
+      {(warehouseId || showAll) && (
         <ConsolidationBanner
-          warehouseId={warehouseId}
+          warehouseIds={showAll ? warehouseIds : [warehouseId!]}
           threshold={consolidation.threshold}
           enabled={consolidation.enabled}
           onConsolidated={loadBoxes}
