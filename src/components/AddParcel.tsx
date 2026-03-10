@@ -455,17 +455,19 @@ toast.error('Veuillez sélectionner une box');
                 <Input
                   type="number"
                   min={1}
-                  value={consolidation.threshold}
+                  value={thresholdInput}
                   onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === '') {
-                      consolidation.setThreshold(null);
-                    } else {
-                      consolidation.setThreshold(parseInt(val));
-                    }
+                    setThresholdInput(e.target.value);
                   }}
                   onBlur={() => {
-                    if (consolidation.threshold < 1) consolidation.setThreshold(1);
+                    const num = parseInt(thresholdInput);
+                    if (!thresholdInput || isNaN(num) || num < 1) {
+                      setThresholdInput('1');
+                      consolidation.setThreshold(1);
+                    } else {
+                      setThresholdInput(String(num));
+                      consolidation.setThreshold(num);
+                    }
                   }}
                   className="w-20"
                 />
