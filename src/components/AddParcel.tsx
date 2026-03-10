@@ -51,6 +51,10 @@ const AddParcel: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    setThresholdInput(String(consolidation.threshold));
+  }, [consolidation.threshold]);
+
+  useEffect(() => {
     if (warehouseId) loadBoxes();
     loadBoutiques();
   }, [warehouseId]);
