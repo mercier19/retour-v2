@@ -10,17 +10,18 @@ interface Suggestion {
   count: number;
   boxCount: number;
   boxIds: string[];
+  warehouseId: string;
 }
 
 interface ConsolidationBannerProps {
-  warehouseId: string;
+  warehouseIds: string[];
   threshold: number;
   enabled: boolean;
   onConsolidated: () => void;
 }
 
 const ConsolidationBanner: React.FC<ConsolidationBannerProps> = ({
-  warehouseId,
+  warehouseIds,
   threshold,
   enabled,
   onConsolidated,
@@ -30,19 +31,19 @@ const ConsolidationBanner: React.FC<ConsolidationBannerProps> = ({
   const [consolidating, setConsolidating] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!enabled || !warehouseId) {
+    if (!enabled || warehouseIds.length === 0) {
       setSuggestions([]);
       return;
     }
     loadSuggestions();
-  }, [enabled, warehouseId, threshold]);
+  }, [enabled, warehouseIds.join(','), threshold]);
 
   const loadSuggestions = async () => {
     setLoading(true);
     const { data: parcels } = await supabase
       .from('parcels')
-      .select('boutique, box_id')
-      .eq('warehouse_id', warehouseId)
+      .select('boutique, box_id, warehouse_id')
+      .in('warehouse_id', warehouseIds)
       .not('boutique', 'is', null)
       .not('box_id', 'is', null);
 
@@ -51,21 +52,25 @@ const ConsolidationBanner: React.FC<ConsolidationBannerProps> = ({
       return;
     }
 
-    const grouped = new Map<string, Set<string>>();
-    const counts = new Map<string, number>();
+    // Group by warehouse_id + boutique
+    const grouped = new Map<string, { boxIds: Set<string>; count: number; warehouseId: string }>();
 
     for (const p of parcels) {
       if (!p.boutique || !p.box_id) continue;
-      if (!grouped.has(p.boutique)) grouped.set(p.boutique, new Set());
-      grouped.get(p.boutique)!.add(p.box_id);
-      counts.set(p.boutique, (counts.get(p.boutique) || 0) + 1);
+      const key = `${p.warehouse_id}::${p.boutique}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, { boxIds: new Set(), count: 0, warehouseId: p.warehouse_id });
+      }
+      const entry = grouped.get(key)!;
+      entry.boxIds.add(p.box_id);
+      entry.count += 1;
     }
 
     const results: Suggestion[] = [];
-    for (const [boutique, boxIds] of grouped) {
-      const count = counts.get(boutique) || 0;
+    for (const [key, { boxIds, count, warehouseId }] of grouped) {
+      const boutique = key.split('::').slice(1).join('::');
       if (count >= threshold && boxIds.size > 1) {
-        results.push({ boutique, count, boxCount: boxIds.size, boxIds: Array.from(boxIds) });
+        results.push({ boutique, count, boxCount: boxIds.size, boxIds: Array.from(boxIds), warehouseId });
       }
     }
 
@@ -75,35 +80,32 @@ const ConsolidationBanner: React.FC<ConsolidationBannerProps> = ({
   };
 
   const handleConsolidate = async (suggestion: Suggestion) => {
-    setConsolidating(suggestion.boutique);
+    setConsolidating(`${suggestion.warehouseId}::${suggestion.boutique}`);
 
     const today = new Date().toISOString().slice(0, 10);
     let boxName = `Boutique ${suggestion.boutique}`;
 
-    // Check uniqueness, append date if needed
     const { data: existing } = await supabase
       .from('boxes')
       .select('name')
-      .eq('warehouse_id', warehouseId)
+      .eq('warehouse_id', suggestion.warehouseId)
       .eq('name', boxName);
 
     if (existing && existing.length > 0) {
       boxName = `${boxName} ${today}`;
-      // If still exists, add a random suffix
       const { data: existing2 } = await supabase
         .from('boxes')
         .select('name')
-        .eq('warehouse_id', warehouseId)
+        .eq('warehouse_id', suggestion.warehouseId)
         .eq('name', boxName);
       if (existing2 && existing2.length > 0) {
         boxName = `${boxName}-${Math.random().toString(36).slice(2, 6)}`;
       }
     }
 
-    // Create box
     const { data: newBox, error: boxError } = await supabase
       .from('boxes')
-      .insert({ warehouse_id: warehouseId, name: boxName, quota: 500 })
+      .insert({ warehouse_id: suggestion.warehouseId, name: boxName, quota: 500 })
       .select()
       .single();
 
@@ -113,11 +115,10 @@ const ConsolidationBanner: React.FC<ConsolidationBannerProps> = ({
       return;
     }
 
-    // Move all parcels of this boutique to the new box
     const { error: updateError } = await supabase
       .from('parcels')
       .update({ box_id: newBox.id })
-      .eq('warehouse_id', warehouseId)
+      .eq('warehouse_id', suggestion.warehouseId)
       .eq('boutique', suggestion.boutique);
 
     if (updateError) {
@@ -126,7 +127,7 @@ const ConsolidationBanner: React.FC<ConsolidationBannerProps> = ({
       toast.success(
         `${suggestion.count} colis de "${suggestion.boutique}" rassemblés dans "${boxName}"`
       );
-      setSuggestions((prev) => prev.filter((s) => s.boutique !== suggestion.boutique));
+      setSuggestions((prev) => prev.filter((s) => !(s.boutique === suggestion.boutique && s.warehouseId === suggestion.warehouseId)));
       onConsolidated();
     }
     setConsolidating(null);
@@ -137,7 +138,7 @@ const ConsolidationBanner: React.FC<ConsolidationBannerProps> = ({
   return (
     <div className="space-y-3">
       {suggestions.slice(0, 3).map((s) => (
-        <Card key={s.boutique} className="border-yellow-500/50 bg-yellow-500/10">
+        <Card key={`${s.warehouseId}::${s.boutique}`} className="border-yellow-500/50 bg-yellow-500/10">
           <CardContent className="p-4 flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
               <PackageCheck className="w-5 h-5 text-yellow-600 shrink-0" />
@@ -151,9 +152,9 @@ const ConsolidationBanner: React.FC<ConsolidationBannerProps> = ({
               variant="outline"
               className="shrink-0 border-yellow-600 text-yellow-700 hover:bg-yellow-500/20"
               onClick={() => handleConsolidate(s)}
-              disabled={consolidating === s.boutique}
+              disabled={consolidating === `${s.warehouseId}::${s.boutique}`}
             >
-              {consolidating === s.boutique ? (
+              {consolidating === `${s.warehouseId}::${s.boutique}` ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-1" />
               ) : null}
               Rassembler
