@@ -475,9 +475,9 @@ toast.error('Veuillez sélectionner une box');
       )}
 
       {/* Consolidation suggestions */}
-      {warehouseId && (
+      {(warehouseId || showAll) && (
         <ConsolidationBanner
-          warehouseId={warehouseId}
+          warehouseIds={showAll ? warehouseIds : [warehouseId!]}
           threshold={consolidation.threshold}
           enabled={consolidation.enabled}
           onConsolidated={loadBoxes}
