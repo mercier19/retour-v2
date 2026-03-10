@@ -22,6 +22,7 @@ const AddParcel: React.FC = () => {
   const consolidation = useConsolidationSettings();
   const { playSuccess, playError, playPart } = useSound();
   const [showSettings, setShowSettings] = useState(false);
+  const [thresholdInput, setThresholdInput] = useState(String(consolidation.threshold));
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [tracking, setTracking] = useState('');
   const [boxId, setBoxId] = useState('');
