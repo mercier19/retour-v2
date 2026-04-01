@@ -114,25 +114,42 @@ const AdvancedStatistics: React.FC = () => {
     }
   }, [warehouseIds.length, dateRange, isAllowed]);
 
+  const fetchAllParcels = async (warehouseIds: string[], startDate: string | null) => {
+    const PAGE_SIZE = 1000;
+    let allData: ParcelRow[] = [];
+    let from = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      let q = supabase.from('parcels')
+        .select('id, tracking, boutique, wilaya, status, is_missing, created_at, given_at, warehouse_id, updated_at, delivery_type, transfer_status')
+        .in('warehouse_id', warehouseIds);
+      if (startDate) q = q.gte('created_at', startDate);
+      const { data } = await q.range(from, from + PAGE_SIZE - 1);
+      if (data && data.length > 0) {
+        allData = allData.concat(data as ParcelRow[]);
+        from += PAGE_SIZE;
+        hasMore = data.length === PAGE_SIZE;
+      } else {
+        hasMore = false;
+      }
+    }
+    return allData;
+  };
+
   const loadData = async () => {
     if (warehouseIds.length === 0) return;
     setLoading(true);
 
     const startDate = dateFilter ? dateFilter.toISOString() : null;
 
-    const [statsRes, parcelsRes] = await Promise.all([
+    const [statsRes, allParcels] = await Promise.all([
       supabase.rpc('warehouse_stats', {
         p_warehouse_ids: warehouseIds,
         p_start_date: startDate,
         p_end_date: null,
       }),
-      (() => {
-        let q = supabase.from('parcels')
-          .select('id, tracking, boutique, wilaya, status, is_missing, created_at, given_at, warehouse_id, updated_at, delivery_type, transfer_status')
-          .in('warehouse_id', warehouseIds);
-        if (startDate) q = q.gte('created_at', startDate);
-        return q;
-      })(),
+      fetchAllParcels(warehouseIds, startDate),
     ]);
 
     if (statsRes.data) {
@@ -146,7 +163,7 @@ const AdvancedStatistics: React.FC = () => {
         active_in_stock: Number(r.active_in_stock),
       })));
     }
-    setParcels((parcelsRes.data as ParcelRow[]) || []);
+    setParcels(allParcels);
     setLoading(false);
   };
 
