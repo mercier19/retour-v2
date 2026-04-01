@@ -199,10 +199,11 @@ const DonnerRetours: React.FC = () => {
   };
 
   const selectAll = () => {
-    if (selected.size === parcels.length) {
+    const selectableIds = parcels.filter((p) => !p.is_missing).map((p) => p.id);
+    if (selected.size === selectableIds.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(parcels.map((p) => p.id)));
+      setSelected(new Set(selectableIds));
     }
   };
 
@@ -455,7 +456,9 @@ const DonnerRetours: React.FC = () => {
         {parcels.map((parcel) => (
           <Card key={parcel.id} className={`glass-card ${parcel.is_missing ? 'border-destructive/50 bg-destructive/5' : ''} ${parcel.transfer_status === 'in_transit' ? 'border-amber-300/50 bg-amber-500/5' : ''}`}>
             <CardContent className="p-3 flex items-center gap-3">
-              <Checkbox checked={selected.has(parcel.id)} onCheckedChange={() => toggleSelect(parcel.id)} />
+              <div title={parcel.is_missing ? "Ce colis est marqué manquant et ne peut pas être donné" : ""}>
+                <Checkbox checked={selected.has(parcel.id)} onCheckedChange={() => toggleSelect(parcel.id)} disabled={!!parcel.is_missing} />
+              </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-mono text-sm font-medium truncate">{parcel.tracking}</p>
