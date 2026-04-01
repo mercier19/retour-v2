@@ -199,10 +199,11 @@ const DonnerRetours: React.FC = () => {
   };
 
   const selectAll = () => {
-    if (selected.size === parcels.length) {
+    const selectableIds = parcels.filter((p) => !p.is_missing).map((p) => p.id);
+    if (selected.size === selectableIds.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(parcels.map((p) => p.id)));
+      setSelected(new Set(selectableIds));
     }
   };
 
