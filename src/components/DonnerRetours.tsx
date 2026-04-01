@@ -129,7 +129,7 @@ const DonnerRetours: React.FC = () => {
     if (searchMode === 'tracking') {
       dbQuery = dbQuery.ilike('tracking', `%${query.trim()}%`);
     } else {
-      dbQuery = dbQuery.ilike('boutique', `%${query.trim()}%`);
+      dbQuery = dbQuery.eq('boutique', query.trim());
     }
 
     if (transferFilter === 'in_transit') dbQuery = dbQuery.eq('transfer_status', 'in_transit');
