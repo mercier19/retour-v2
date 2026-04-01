@@ -51,8 +51,8 @@
     --sidebar-border: 0 5% 18%;
     --sidebar-ring: 0 78% 52%;
 
-    --font-display: 'Space Grotesk', sans-serif;
-    --font-body: 'Inter', sans-serif;
+    --font-display: 'Space Grotesk', 'Noto Sans Arabic', sans-serif;
+    --font-body: 'Inter', 'Noto Sans Arabic', sans-serif;
   }
 
   .dark {
