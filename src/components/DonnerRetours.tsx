@@ -66,6 +66,7 @@ const DonnerRetours: React.FC = () => {
   // Particulier [Yalidine] state
   const [particulierParcels, setParticulierParcels] = useState<{ id: string; tracking: string; box_name: string | null; created_at: string; warehouse_id: string; phone: string | null; wilaya: string | null; commune: string | null; delivery_type: string | null; is_multi_part: boolean; part_number: number; total_parts: number; boutique: string | null; }[]>([]);
   const [givingParticulierId, setGivingParticulierId] = useState<string | null>(null);
+  const [showParticulier, setShowParticulier] = useState(false);
 
   const canTransfer = hasRole('chef_agence', 'regional', 'super_admin');
 
@@ -258,8 +259,15 @@ const DonnerRetours: React.FC = () => {
     loadBoutiques();
     loadBoxes();
     loadAllWarehouses();
-    loadParticulierParcels();
   }, [warehouseId, showAll]);
+
+  useEffect(() => {
+    if (showParticulier) {
+      loadParticulierParcels();
+    } else {
+      setParticulierParcels([]);
+    }
+  }, [showParticulier, warehouseId, showAll]);
 
   useEffect(() => {
     if (searchMode === 'boutique' && search) {
@@ -514,45 +522,63 @@ const DonnerRetours: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Particulier [Yalidine] toggle button */}
+      <Button
+        variant={showParticulier ? 'secondary' : 'outline'}
+        size="sm"
+        onClick={() => setShowParticulier(!showParticulier)}
+        className="w-full"
+      >
+        <ExternalLink className="w-4 h-4 mr-1" />
+        {showParticulier ? 'Masquer' : 'Afficher'} Particulier [Yalidine]
+        {showParticulier && particulierParcels.length > 0 && (
+          <Badge variant="secondary" className="ml-2">{particulierParcels.length}</Badge>
+        )}
+      </Button>
+
       {/* Particulier [Yalidine] dedicated section */}
-      {particulierParcels.length > 0 && (
+      {showParticulier && (
         <Card className="glass-card border-primary/30">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-3">
               <h2 className="text-sm font-semibold">Particulier [Yalidine]</h2>
               <Badge variant="secondary">{particulierParcels.length}</Badge>
             </div>
-            <div className="space-y-1">
-              {particulierParcels.map((p) => (
-                <div key={p.id} className="flex items-center gap-3 p-2 rounded-md border bg-card">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-sm font-medium truncate">{p.tracking}</span>
-                      <CopyTrackingButton tracking={p.tracking} />
-                      {p.is_multi_part && (
-                        <Badge variant="outline" className="text-xs font-mono">{p.part_number}/{p.total_parts}</Badge>
+            {particulierParcels.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">Aucun colis Particulier en stock</p>
+            ) : (
+              <div className="space-y-1">
+                {particulierParcels.map((p) => (
+                  <div key={p.id} className="flex items-center gap-3 p-2 rounded-md border bg-card">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm font-medium truncate">{p.tracking}</span>
+                        <CopyTrackingButton tracking={p.tracking} />
+                        {p.is_multi_part && (
+                          <Badge variant="outline" className="text-xs font-mono">{p.part_number}/{p.total_parts}</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                        {p.box_name && <span>📦 {p.box_name}</span>}
+                        <span>🕐 {formatDate(p.created_at)}</span>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => handleGiveParticulier(p.id)}
+                      disabled={givingParticulierId === p.id}
+                    >
+                      {givingParticulierId === p.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                      ) : (
+                        <ExternalLink className="w-4 h-4 mr-1" />
                       )}
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                      {p.box_name && <span>📦 {p.box_name}</span>}
-                      <span>🕐 {formatDate(p.created_at)}</span>
-                    </div>
+                      Donner
+                    </Button>
                   </div>
-                  <Button
-                    size="sm"
-                    onClick={() => handleGiveParticulier(p.id)}
-                    disabled={givingParticulierId === p.id}
-                  >
-                    {givingParticulierId === p.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                    ) : (
-                      <ExternalLink className="w-4 h-4 mr-1" />
-                    )}
-                    Donner
-                  </Button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
