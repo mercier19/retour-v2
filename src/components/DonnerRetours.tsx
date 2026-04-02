@@ -12,7 +12,7 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, Command
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Search, AlertTriangle, HandCoins, CheckSquare, XSquare, ChevronsUpDown, Check, ArrowRightLeft, Clock } from 'lucide-react';
+import { Search, AlertTriangle, HandCoins, CheckSquare, XSquare, ChevronsUpDown, Check, ArrowRightLeft, Clock, ExternalLink, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Box, Warehouse } from '@/types/database';
 import ParcelHistoryDialog from '@/components/ParcelHistoryDialog';
@@ -62,6 +62,10 @@ const DonnerRetours: React.FC = () => {
 
   // History modal
   const [historyParcel, setHistoryParcel] = useState<ParcelWithDetails | null>(null);
+
+  // Particulier [Yalidine] state
+  const [particulierParcels, setParticulierParcels] = useState<{ id: string; tracking: string; box_name: string | null; created_at: string; warehouse_id: string; phone: string | null; wilaya: string | null; commune: string | null; delivery_type: string | null; is_multi_part: boolean; part_number: number; total_parts: number; boutique: string | null; }[]>([]);
+  const [givingParticulierId, setGivingParticulierId] = useState<string | null>(null);
 
   const canTransfer = hasRole('chef_agence', 'regional', 'super_admin');
 
@@ -175,10 +179,86 @@ const DonnerRetours: React.FC = () => {
     setBoutiques(unique);
   };
 
+  const loadParticulierParcels = async () => {
+    const ids = showAll ? warehouseIds : warehouseId ? [warehouseId] : [];
+    if (ids.length === 0) { setParticulierParcels([]); return; }
+    const { data } = await supabase
+      .from('parcels')
+      .select('id, tracking, box_id, created_at, warehouse_id, phone, wilaya, commune, delivery_type, is_multi_part, part_number, total_parts, boutique, boxes(name)')
+      .eq('boutique', 'Particulier [Yalidine]')
+      .eq('status', 'in_stock')
+      .eq('is_missing', false)
+      .in('warehouse_id', ids)
+      .order('created_at', { ascending: false })
+      .limit(200);
+    if (data) {
+      setParticulierParcels(data.map((p: any) => ({
+        id: p.id, tracking: p.tracking, box_name: p.boxes?.name || null,
+        created_at: p.created_at, warehouse_id: p.warehouse_id,
+        phone: p.phone, wilaya: p.wilaya, commune: p.commune,
+        delivery_type: p.delivery_type, is_multi_part: p.is_multi_part ?? false,
+        part_number: p.part_number ?? 1, total_parts: p.total_parts ?? 1,
+        boutique: p.boutique,
+      })));
+    }
+  };
+
+  const handleGiveParticulier = async (parcelId: string) => {
+    const parcel = particulierParcels.find(p => p.id === parcelId);
+    if (!parcel) return;
+
+    setGivingParticulierId(parcelId);
+
+    const warehouseCode = allWarehouses.find(w => w.id === parcel.warehouse_id)?.code || currentWarehouse?.code;
+
+    const { error: archiveError } = await supabase.from('archived_parcels').insert({
+      tracking: parcel.tracking,
+      boutique: parcel.boutique,
+      box_name: parcel.box_name,
+      wilaya: parcel.wilaya,
+      commune: parcel.commune,
+      phone: parcel.phone,
+      delivery_type: parcel.delivery_type,
+      status: 'given',
+      warehouse_id: parcel.warehouse_id,
+      created_at: parcel.created_at,
+      is_multi_part: parcel.is_multi_part,
+      part_number: parcel.part_number,
+      total_parts: parcel.total_parts,
+    });
+
+    if (archiveError) {
+      toast.error(`Erreur archivage : ${archiveError.message}`);
+      setGivingParticulierId(null);
+      return;
+    }
+
+    const { error: deleteError } = await supabase.from('parcels').delete().eq('id', parcelId);
+    if (deleteError) {
+      toast.error(`Erreur suppression : ${deleteError.message}`);
+      setGivingParticulierId(null);
+      return;
+    }
+
+    setParticulierParcels(prev => prev.filter(p => p.id !== parcelId));
+    setParcels(prev => prev.filter(p => p.id !== parcelId));
+
+    if (warehouseCode) {
+      window.open(`https://yalidine.app/app/particulier/remettre_retour.php?hi=${warehouseCode}`, '_blank');
+    } else {
+      toast.warning('Code agence introuvable pour le lien Yalidine');
+    }
+
+    toast.success(`Colis ${parcel.tracking} donné (Particulier)`);
+    logUserAction({ action_type: 'give_particulier', warehouse_id: parcel.warehouse_id, parcel_id: parcelId, action_data: { tracking: parcel.tracking } });
+    setGivingParticulierId(null);
+  };
+
   useEffect(() => {
     loadBoutiques();
     loadBoxes();
     loadAllWarehouses();
+    loadParticulierParcels();
   }, [warehouseId, showAll]);
 
   useEffect(() => {
@@ -433,6 +513,49 @@ const DonnerRetours: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Particulier [Yalidine] dedicated section */}
+      {particulierParcels.length > 0 && (
+        <Card className="glass-card border-primary/30">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="text-sm font-semibold">Particulier [Yalidine]</h2>
+              <Badge variant="secondary">{particulierParcels.length}</Badge>
+            </div>
+            <div className="space-y-1">
+              {particulierParcels.map((p) => (
+                <div key={p.id} className="flex items-center gap-3 p-2 rounded-md border bg-card">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm font-medium truncate">{p.tracking}</span>
+                      <CopyTrackingButton tracking={p.tracking} />
+                      {p.is_multi_part && (
+                        <Badge variant="outline" className="text-xs font-mono">{p.part_number}/{p.total_parts}</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                      {p.box_name && <span>📦 {p.box_name}</span>}
+                      <span>🕐 {formatDate(p.created_at)}</span>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => handleGiveParticulier(p.id)}
+                    disabled={givingParticulierId === p.id}
+                  >
+                    {givingParticulierId === p.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                    ) : (
+                      <ExternalLink className="w-4 h-4 mr-1" />
+                    )}
+                    Donner
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {parcels.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
