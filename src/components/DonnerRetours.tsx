@@ -66,6 +66,7 @@ const DonnerRetours: React.FC = () => {
   // Particulier [Yalidine] state
   const [particulierParcels, setParticulierParcels] = useState<{ id: string; tracking: string; box_name: string | null; created_at: string; warehouse_id: string; phone: string | null; wilaya: string | null; commune: string | null; delivery_type: string | null; is_multi_part: boolean; part_number: number; total_parts: number; boutique: string | null; }[]>([]);
   const [givingParticulierId, setGivingParticulierId] = useState<string | null>(null);
+  const [showParticulier, setShowParticulier] = useState(false);
 
   const canTransfer = hasRole('chef_agence', 'regional', 'super_admin');
 
