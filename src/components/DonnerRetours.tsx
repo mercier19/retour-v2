@@ -514,6 +514,49 @@ const DonnerRetours: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Particulier [Yalidine] dedicated section */}
+      {particulierParcels.length > 0 && (
+        <Card className="glass-card border-primary/30">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="text-sm font-semibold">Particulier [Yalidine]</h2>
+              <Badge variant="secondary">{particulierParcels.length}</Badge>
+            </div>
+            <div className="space-y-1">
+              {particulierParcels.map((p) => (
+                <div key={p.id} className="flex items-center gap-3 p-2 rounded-md border bg-card">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-sm font-medium truncate">{p.tracking}</span>
+                      <CopyTrackingButton tracking={p.tracking} />
+                      {p.is_multi_part && (
+                        <Badge variant="outline" className="text-xs font-mono">{p.part_number}/{p.total_parts}</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                      {p.box_name && <span>📦 {p.box_name}</span>}
+                      <span>🕐 {formatDate(p.created_at)}</span>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => handleGiveParticulier(p.id)}
+                    disabled={givingParticulierId === p.id}
+                  >
+                    {givingParticulierId === p.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-1" />
+                    ) : (
+                      <ExternalLink className="w-4 h-4 mr-1" />
+                    )}
+                    Donner
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {parcels.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap">
           <Button variant="outline" size="sm" onClick={selectAll}>
