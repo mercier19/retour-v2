@@ -259,8 +259,15 @@ const DonnerRetours: React.FC = () => {
     loadBoutiques();
     loadBoxes();
     loadAllWarehouses();
-    loadParticulierParcels();
   }, [warehouseId, showAll]);
+
+  useEffect(() => {
+    if (showParticulier) {
+      loadParticulierParcels();
+    } else {
+      setParticulierParcels([]);
+    }
+  }, [showParticulier, warehouseId, showAll]);
 
   useEffect(() => {
     if (searchMode === 'boutique' && search) {
