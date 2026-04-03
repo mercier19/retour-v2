@@ -862,6 +862,11 @@ const AdvancedStatistics: React.FC = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* === INVENTORIES TAB === */}
+        <TabsContent value="inventories">
+          <InventoryReports />
+        </TabsContent>
       </Tabs>
     </div>
   );
