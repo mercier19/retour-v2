@@ -44,6 +44,8 @@ const Dashboard: React.FC = () => {
     if (warehouseIds.length === 0) return;
     loadStats();
     loadMisroutedParcels();
+    loadNextInventory();
+    loadInventoryNotifications();
   }, [warehouseId, showAll, warehouseIds.length]);
 
   useEffect(() => {
