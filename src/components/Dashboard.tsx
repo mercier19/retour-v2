@@ -194,6 +194,40 @@ const Dashboard: React.FC = () => {
         ))}
       </div>
 
+      {/* Inventory notifications */}
+      {inventoryNotifications.length > 0 && (
+        <div className="space-y-2">
+          {inventoryNotifications.map(n => (
+            <Card key={n.id} className={`border-${n.type === 'overdue' ? 'destructive' : 'amber-500'}/50 bg-${n.type === 'overdue' ? 'destructive' : 'amber-500'}/5`}>
+              <CardContent className="p-3 flex items-center gap-3">
+                <Bell className="w-4 h-4 text-amber-500 shrink-0" />
+                <p className="text-sm flex-1">{n.message}</p>
+                <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => dismissNotification(n.id)}>
+                  Fermer
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Next inventory card */}
+      {nextInventory && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-4 flex items-center gap-3">
+            <ClipboardCheck className="w-5 h-5 text-primary shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium">
+                Prochain inventaire : {format(new Date(nextInventory.scheduled_date), 'dd/MM/yyyy HH:mm', { locale: fr })}
+              </p>
+              {nextInventory.status === 'overdue' && (
+                <Badge variant="destructive" className="mt-1 text-xs">En retard</Badge>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {missingCount > 0 && (
         <Card className="border-destructive/50 bg-destructive/5">
           <CardContent className="p-4 flex items-center gap-3">
