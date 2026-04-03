@@ -77,7 +77,35 @@ const Dashboard: React.FC = () => {
     setMisroutedParcels((data as MisroutedParcel[]) || []);
   };
 
-  const loadStats = async () => {
+  const loadNextInventory = async () => {
+    if (warehouseIds.length === 0) return;
+    const targetIds = showAll ? warehouseIds : [warehouseId!];
+    const { data } = await supabase
+      .from('scheduled_inventories')
+      .select('id, scheduled_date, status')
+      .in('warehouse_id', targetIds)
+      .in('status', ['pending', 'overdue'])
+      .order('scheduled_date', { ascending: true })
+      .limit(1);
+    setNextInventory((data as any)?.[0] || null);
+  };
+
+  const loadInventoryNotifications = async () => {
+    const { data } = await supabase
+      .from('inventory_notifications')
+      .select('id, type, message')
+      .eq('read', false)
+      .eq('dismissed', false)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    setInventoryNotifications((data as any[]) || []);
+  };
+
+  const dismissNotification = async (id: string) => {
+    await supabase.from('inventory_notifications').update({ dismissed: true } as any).eq('id', id);
+    setInventoryNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
     if (warehouseIds.length === 0) return;
 
     const [parcelsRes, boxesRes, missingRes, todayRes] = await Promise.all([
