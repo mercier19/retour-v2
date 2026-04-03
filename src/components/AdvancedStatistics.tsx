@@ -519,6 +519,7 @@ const AdvancedStatistics: React.FC = () => {
           <TabsTrigger value="performance">Performance dépôts</TabsTrigger>
           <TabsTrigger value="users">Activité utilisateurs</TabsTrigger>
           <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+          <TabsTrigger value="inventories">Inventaires</TabsTrigger>
         </TabsList>
 
         {/* === PERFORMANCE TAB === */}
