@@ -129,6 +129,161 @@ export type Database = {
           },
         ]
       }
+      inventory_checks: {
+        Row: {
+          actual_count: number | null
+          box_id: string
+          checked_at: string
+          checked_by: string | null
+          discrepancies: Json | null
+          expected_count: number
+          id: string
+          inventory_session_id: string
+        }
+        Insert: {
+          actual_count?: number | null
+          box_id: string
+          checked_at?: string
+          checked_by?: string | null
+          discrepancies?: Json | null
+          expected_count?: number
+          id?: string
+          inventory_session_id: string
+        }
+        Update: {
+          actual_count?: number | null
+          box_id?: string
+          checked_at?: string
+          checked_by?: string | null
+          discrepancies?: Json | null
+          expected_count?: number
+          id?: string
+          inventory_session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_checks_box_id_fkey"
+            columns: ["box_id"]
+            isOneToOne: false
+            referencedRelation: "boxes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_checks_checked_by_fkey"
+            columns: ["checked_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_checks_inventory_session_id_fkey"
+            columns: ["inventory_session_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_notifications: {
+        Row: {
+          created_at: string
+          dismissed: boolean
+          id: string
+          message: string | null
+          read: boolean
+          type: string
+          user_id: string | null
+          warehouse_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          dismissed?: boolean
+          id?: string
+          message?: string | null
+          read?: boolean
+          type: string
+          user_id?: string | null
+          warehouse_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          dismissed?: boolean
+          id?: string
+          message?: string | null
+          read?: boolean
+          type?: string
+          user_id?: string | null
+          warehouse_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_notifications_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_sessions: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          id: string
+          notes: string | null
+          scheduled_inventory_id: string | null
+          started_at: string
+          warehouse_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          id?: string
+          notes?: string | null
+          scheduled_inventory_id?: string | null
+          started_at?: string
+          warehouse_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          id?: string
+          notes?: string | null
+          scheduled_inventory_id?: string | null
+          started_at?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_sessions_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_sessions_scheduled_inventory_id_fkey"
+            columns: ["scheduled_inventory_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_inventories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_sessions_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parcel_status_log: {
         Row: {
           changed_by: string | null
@@ -319,6 +474,54 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_inventories: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          interval_days: number | null
+          is_recurring: boolean
+          scheduled_date: string
+          status: string
+          warehouse_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          interval_days?: number | null
+          is_recurring?: boolean
+          scheduled_date: string
+          status?: string
+          warehouse_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          interval_days?: number | null
+          is_recurring?: boolean
+          scheduled_date?: string
+          status?: string
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_inventories_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_inventories_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transfer_history: {
         Row: {
           completed_at: string | null
@@ -502,6 +705,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_overdue_inventories: { Args: never; Returns: undefined }
       get_incoming_transfer: {
         Args: { p_destination_warehouse_id: string; p_tracking: string }
         Returns: {
