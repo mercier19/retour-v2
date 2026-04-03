@@ -2,13 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useWarehouseFilter } from '@/hooks/useWarehouseFilter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Package, BoxIcon, AlertTriangle, TrendingUp, Wrench } from 'lucide-react';
+import { Package, BoxIcon, AlertTriangle, TrendingUp, Wrench, ClipboardCheck, Bell } from 'lucide-react';
 import { Box } from '@/types/database';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 interface MisroutedParcel {
@@ -28,6 +31,8 @@ const Dashboard: React.FC = () => {
   const [boxes, setBoxes] = useState<(Box & { parcel_count: number })[]>([]);
   const [misroutedParcels, setMisroutedParcels] = useState<MisroutedParcel[]>([]);
   const [warehouseNames, setWarehouseNames] = useState<Record<string, string>>({});
+  const [nextInventory, setNextInventory] = useState<{ id: string; scheduled_date: string; status: string } | null>(null);
+  const [inventoryNotifications, setInventoryNotifications] = useState<{ id: string; type: string; message: string }[]>([]);
 
   // Resolve modal state
   const [showResolveModal, setShowResolveModal] = useState(false);
@@ -40,6 +45,8 @@ const Dashboard: React.FC = () => {
     if (warehouseIds.length === 0) return;
     loadStats();
     loadMisroutedParcels();
+    loadNextInventory();
+    loadInventoryNotifications();
   }, [warehouseId, showAll, warehouseIds.length]);
 
   useEffect(() => {
@@ -69,6 +76,35 @@ const Dashboard: React.FC = () => {
       p_warehouse_ids: targetIds,
     });
     setMisroutedParcels((data as MisroutedParcel[]) || []);
+  };
+
+  const loadNextInventory = async () => {
+    if (warehouseIds.length === 0) return;
+    const targetIds = showAll ? warehouseIds : [warehouseId!];
+    const { data } = await supabase
+      .from('scheduled_inventories')
+      .select('id, scheduled_date, status')
+      .in('warehouse_id', targetIds)
+      .in('status', ['pending', 'overdue'])
+      .order('scheduled_date', { ascending: true })
+      .limit(1);
+    setNextInventory((data as any)?.[0] || null);
+  };
+
+  const loadInventoryNotifications = async () => {
+    const { data } = await supabase
+      .from('inventory_notifications')
+      .select('id, type, message')
+      .eq('read', false)
+      .eq('dismissed', false)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    setInventoryNotifications((data as any[]) || []);
+  };
+
+  const dismissNotification = async (id: string) => {
+    await supabase.from('inventory_notifications').update({ dismissed: true } as any).eq('id', id);
+    setInventoryNotifications(prev => prev.filter(n => n.id !== id));
   };
 
   const loadStats = async () => {
@@ -158,6 +194,40 @@ const Dashboard: React.FC = () => {
           </Card>
         ))}
       </div>
+
+      {/* Inventory notifications */}
+      {inventoryNotifications.length > 0 && (
+        <div className="space-y-2">
+          {inventoryNotifications.map(n => (
+            <Card key={n.id} className={`border-${n.type === 'overdue' ? 'destructive' : 'amber-500'}/50 bg-${n.type === 'overdue' ? 'destructive' : 'amber-500'}/5`}>
+              <CardContent className="p-3 flex items-center gap-3">
+                <Bell className="w-4 h-4 text-amber-500 shrink-0" />
+                <p className="text-sm flex-1">{n.message}</p>
+                <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => dismissNotification(n.id)}>
+                  Fermer
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Next inventory card */}
+      {nextInventory && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="p-4 flex items-center gap-3">
+            <ClipboardCheck className="w-5 h-5 text-primary shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium">
+                Prochain inventaire : {format(new Date(nextInventory.scheduled_date), 'dd/MM/yyyy HH:mm', { locale: fr })}
+              </p>
+              {nextInventory.status === 'overdue' && (
+                <Badge variant="destructive" className="mt-1 text-xs">En retard</Badge>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {missingCount > 0 && (
         <Card className="border-destructive/50 bg-destructive/5">

@@ -22,6 +22,7 @@ import { fr } from 'date-fns/locale';
 import { getWilayaName } from '@/lib/wilayas';
 import { toast } from 'sonner';
 import { generateAdvancedReport } from '@/utils/exportToPPTX';
+import InventoryReports from '@/components/InventoryReports';
 
 const COLORS = [
   'hsl(0, 78%, 47%)', 'hsl(38, 95%, 55%)', 'hsl(142, 72%, 40%)',
@@ -518,6 +519,7 @@ const AdvancedStatistics: React.FC = () => {
           <TabsTrigger value="performance">Performance dépôts</TabsTrigger>
           <TabsTrigger value="users">Activité utilisateurs</TabsTrigger>
           <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+          <TabsTrigger value="inventories">Inventaires</TabsTrigger>
         </TabsList>
 
         {/* === PERFORMANCE TAB === */}
@@ -859,6 +861,11 @@ const AdvancedStatistics: React.FC = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* === INVENTORIES TAB === */}
+        <TabsContent value="inventories">
+          <InventoryReports />
         </TabsContent>
       </Tabs>
     </div>

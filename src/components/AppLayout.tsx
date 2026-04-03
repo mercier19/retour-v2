@@ -16,6 +16,8 @@ import Users from '@/components/admin/Users';
 import Warehouses from '@/components/admin/Warehouses';
 import { Button } from '@/components/ui/button';
 import yalidinelogo from '@/assets/logo_yalidine.png';
+import InventorySchedule from '@/components/InventorySchedule';
+import InventoryExecution from '@/components/InventoryExecution';
 import {
   LayoutDashboard,
   Plus,
@@ -29,10 +31,11 @@ import {
   LogOut,
   Menu,
   X,
-  ArrowRightLeft } from
+  ArrowRightLeft,
+  ClipboardCheck } from
 'lucide-react';
 
-type Page = 'dashboard' | 'add' | 'boxes' | 'retours' | 'stock' | 'stats' | 'advanced-stats' | 'search' | 'transfer' | 'users' | 'warehouses';
+type Page = 'dashboard' | 'add' | 'boxes' | 'retours' | 'stock' | 'stats' | 'advanced-stats' | 'search' | 'transfer' | 'inventory' | 'users' | 'warehouses';
 
 const AppLayout: React.FC = () => {
   const { profile, signOut } = useAuth();
@@ -63,6 +66,7 @@ const AppLayout: React.FC = () => {
   { id: 'advanced-stats', label: 'Stats avancées', icon: BarChart3, show: hasRole('regional', 'super_admin') },
   { id: 'search', label: 'Rechercher', icon: Search, show: true },
   { id: 'transfer', label: 'Transférer', icon: ArrowRightLeft, show: true },
+  { id: 'inventory', label: 'Inventaires', icon: ClipboardCheck, show: hasRole('regional', 'chef_agence', 'super_admin') },
   { id: 'users', label: 'Utilisateurs', icon: UsersIcon, show: isAdmin },
   { id: 'warehouses', label: 'Dépôts', icon: Building2, show: isAdmin }];
 
@@ -78,6 +82,9 @@ const AppLayout: React.FC = () => {
       case 'advanced-stats':return hasRole('regional', 'super_admin') ? <AdvancedStatistics /> : null;
       case 'search':return <SearchParcels />;
       case 'transfer':return <TransferParcels />;
+      case 'inventory':return hasRole('regional', 'super_admin')
+        ? <div className="space-y-8"><InventorySchedule /><InventoryExecution /></div>
+        : hasRole('chef_agence') ? <InventoryExecution /> : null;
       case 'users':return isAdmin ? <Users /> : null;
       case 'warehouses':return isAdmin ? <Warehouses /> : null;
       default:return <Dashboard />;
