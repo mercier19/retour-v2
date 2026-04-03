@@ -106,6 +106,7 @@ const Dashboard: React.FC = () => {
     setInventoryNotifications(prev => prev.filter(n => n.id !== id));
   };
 
+  const loadStats = async () => {
     if (warehouseIds.length === 0) return;
 
     const [parcelsRes, boxesRes, missingRes, todayRes] = await Promise.all([
