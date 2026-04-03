@@ -82,6 +82,9 @@ const AppLayout: React.FC = () => {
       case 'advanced-stats':return hasRole('regional', 'super_admin') ? <AdvancedStatistics /> : null;
       case 'search':return <SearchParcels />;
       case 'transfer':return <TransferParcels />;
+      case 'inventory':return hasRole('regional', 'super_admin')
+        ? <div className="space-y-8"><InventorySchedule /><InventoryExecution /></div>
+        : hasRole('chef_agence') ? <InventoryExecution /> : null;
       case 'users':return isAdmin ? <Users /> : null;
       case 'warehouses':return isAdmin ? <Warehouses /> : null;
       default:return <Dashboard />;
