@@ -66,6 +66,7 @@ const AppLayout: React.FC = () => {
   { id: 'advanced-stats', label: 'Stats avancées', icon: BarChart3, show: hasRole('regional', 'super_admin') },
   { id: 'search', label: 'Rechercher', icon: Search, show: true },
   { id: 'transfer', label: 'Transférer', icon: ArrowRightLeft, show: true },
+  { id: 'inventory', label: 'Inventaires', icon: ClipboardCheck, show: hasRole('regional', 'chef_agence', 'super_admin') },
   { id: 'users', label: 'Utilisateurs', icon: UsersIcon, show: isAdmin },
   { id: 'warehouses', label: 'Dépôts', icon: Building2, show: isAdmin }];
 
