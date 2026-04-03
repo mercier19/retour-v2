@@ -22,6 +22,7 @@ import { fr } from 'date-fns/locale';
 import { getWilayaName } from '@/lib/wilayas';
 import { toast } from 'sonner';
 import { generateAdvancedReport } from '@/utils/exportToPPTX';
+import InventoryReports from '@/components/InventoryReports';
 
 const COLORS = [
   'hsl(0, 78%, 47%)', 'hsl(38, 95%, 55%)', 'hsl(142, 72%, 40%)',
