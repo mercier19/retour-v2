@@ -7,8 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Package, BoxIcon, AlertTriangle, TrendingUp, Wrench } from 'lucide-react';
+import { Package, BoxIcon, AlertTriangle, TrendingUp, Wrench, ClipboardCheck, Bell } from 'lucide-react';
 import { Box } from '@/types/database';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 interface MisroutedParcel {
