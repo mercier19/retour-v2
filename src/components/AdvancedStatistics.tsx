@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useWarehouseFilter } from '@/hooks/useWarehouseFilter';
 import { useAuth } from '@/contexts/AuthContext';
