@@ -23,7 +23,7 @@ const Warehouses: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [editType, setEditType] = useState('');
-
+  const [showImport, setShowImport] = useState(false);
   useEffect(() => { loadWarehouses(); }, []);
 
   const loadWarehouses = async () => {
