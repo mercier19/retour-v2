@@ -12,12 +12,17 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, Command
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Search, AlertTriangle, HandCoins, CheckSquare, XSquare, ChevronsUpDown, Check, ArrowRightLeft, Clock, ExternalLink, Loader2 } from 'lucide-react';
+import { Search, AlertTriangle, HandCoins, CheckSquare, XSquare, ChevronsUpDown, Check, ArrowRightLeft, Clock, ExternalLink, Loader2, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Box, Warehouse } from '@/types/database';
 import ParcelHistoryDialog from '@/components/ParcelHistoryDialog';
 import CopyTrackingButton from '@/components/CopyTrackingButton';
 import { logUserAction } from '@/utils/actionLogger';
+
+interface AgentOption {
+  user_id: string;
+  full_name: string;
+}
 
 interface ParcelWithDetails {
   id: string;
