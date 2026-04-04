@@ -241,6 +241,15 @@ const Users: React.FC = () => {
           </Card>
         ))}
       </div>
+
+      <ExcelImportModal
+        open={showImport}
+        onOpenChange={setShowImport}
+        title="Importer des utilisateurs"
+        templateColumns={['email', 'full_name', 'role', 'warehouse_codes']}
+        templateFileName="import-users-template.xlsx"
+        onImport={handleImportUsers}
+      />
     </div>
   );
 };
