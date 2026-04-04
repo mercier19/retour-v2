@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useWarehouseFilter } from '@/hooks/useWarehouseFilter';
 import { useAuth } from '@/contexts/AuthContext';
@@ -92,6 +94,7 @@ const AdvancedStatistics: React.FC = () => {
   const [userRanking, setUserRanking] = useState<UserRankingItem[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [exportingPPTX, setExportingPPTX] = useState(false);
+  const [includeArchived, setIncludeArchived] = useState(false);
 
   const isAllowed = hasRole('regional', 'super_admin');
 
@@ -113,14 +116,15 @@ const AdvancedStatistics: React.FC = () => {
       loadData();
       loadUserActivity();
     }
-  }, [warehouseIds.length, dateRange, isAllowed]);
+  }, [warehouseIds.length, dateRange, isAllowed, includeArchived]);
 
   const fetchAllParcels = async (warehouseIds: string[], startDate: string | null) => {
     const PAGE_SIZE = 1000;
     let allData: ParcelRow[] = [];
+
+    // Fetch active parcels
     let from = 0;
     let hasMore = true;
-
     while (hasMore) {
       let q = supabase.from('parcels')
         .select('id, tracking, boutique, wilaya, status, is_missing, created_at, given_at, warehouse_id, updated_at, delivery_type, transfer_status')
@@ -135,6 +139,41 @@ const AdvancedStatistics: React.FC = () => {
         hasMore = false;
       }
     }
+
+    // Fetch archived parcels if toggle is on
+    if (includeArchived) {
+      from = 0;
+      hasMore = true;
+      while (hasMore) {
+        let q = supabase.from('archived_parcels')
+          .select('id, tracking, boutique, wilaya, status, created_at, archived_at, warehouse_id, delivery_type')
+          .in('warehouse_id', warehouseIds);
+        if (startDate) q = q.gte('created_at', startDate);
+        const { data } = await q.range(from, from + PAGE_SIZE - 1);
+        if (data && data.length > 0) {
+          const mapped: ParcelRow[] = (data as any[]).map(p => ({
+            id: p.id,
+            tracking: p.tracking,
+            boutique: p.boutique,
+            wilaya: p.wilaya,
+            status: p.status || 'given',
+            is_missing: false,
+            created_at: p.created_at || p.archived_at,
+            given_at: p.status === 'given' ? p.archived_at : null,
+            warehouse_id: p.warehouse_id,
+            updated_at: p.archived_at,
+            delivery_type: p.delivery_type,
+            transfer_status: null,
+          }));
+          allData = allData.concat(mapped);
+          from += PAGE_SIZE;
+          hasMore = data.length === PAGE_SIZE;
+        } else {
+          hasMore = false;
+        }
+      }
+    }
+
     return allData;
   };
 
@@ -488,6 +527,10 @@ const AdvancedStatistics: React.FC = () => {
               ))}
             </SelectContent>
           </Select>
+          <div className="flex items-center gap-1.5">
+            <Switch id="include-archived" checked={includeArchived} onCheckedChange={setIncludeArchived} />
+            <Label htmlFor="include-archived" className="text-xs cursor-pointer whitespace-nowrap">Inclure archivés</Label>
+          </div>
           <Button variant="outline" size="sm" onClick={exportCSV} className="h-8 text-xs gap-1">
             <Download className="w-3.5 h-3.5" /> CSV
           </Button>
