@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, Trash2, Building2 } from 'lucide-react';
+import { Plus, Trash2, Building2, FileSpreadsheet } from 'lucide-react';
 import { Profile, Warehouse, AppRole } from '@/types/database';
+import ExcelImportModal from '@/components/ExcelImportModal';
 
 const ROLES: { value: AppRole; label: string }[] = [
   { value: 'operations', label: 'Opérations' },
@@ -28,7 +29,7 @@ const Users: React.FC = () => {
   const [newRole, setNewRole] = useState<AppRole>('operations');
   const [newWarehouseIds, setNewWarehouseIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-
+  const [showImport, setShowImport] = useState(false);
   useEffect(() => {
     loadData();
   }, []);
@@ -115,14 +116,36 @@ const Users: React.FC = () => {
     else { toast.success('Dépôt retiré'); loadData(); }
   };
 
+  const handleImportUsers = async (rows: Record<string, any>[]) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { toast.error('Non authentifié'); return []; }
+
+    const res = await supabase.functions.invoke('import-users', {
+      body: { users: rows },
+    });
+
+    if (res.error) {
+      toast.error(`Erreur: ${res.error.message}`);
+      return rows.map((r, i) => ({ row: i + 2, label: r.email || '', success: false, error: res.error!.message }));
+    }
+
+    const { results } = res.data as { results: { row: number; email: string; success: boolean; error?: string }[] };
+    loadData();
+    return results.map(r => ({ row: r.row, label: r.email, success: r.success, error: r.error }));
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Gestion des utilisateurs</h1>
-        <Dialog open={showCreate} onOpenChange={setShowCreate}>
-          <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4 mr-1" /> Créer un utilisateur</Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setShowImport(true)}>
+            <FileSpreadsheet className="w-4 h-4 mr-1" /> Importer (Excel)
+          </Button>
+          <Dialog open={showCreate} onOpenChange={setShowCreate}>
+            <DialogTrigger asChild>
+              <Button><Plus className="w-4 h-4 mr-1" /> Créer un utilisateur</Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>Nouveau utilisateur</DialogTitle></DialogHeader>
             <div className="space-y-4">
@@ -172,6 +195,7 @@ const Users: React.FC = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -217,6 +241,15 @@ const Users: React.FC = () => {
           </Card>
         ))}
       </div>
+
+      <ExcelImportModal
+        open={showImport}
+        onOpenChange={setShowImport}
+        title="Importer des utilisateurs"
+        templateColumns={['email', 'full_name', 'role', 'warehouse_codes']}
+        templateFileName="import-users-template.xlsx"
+        onImport={handleImportUsers}
+      />
     </div>
   );
 };
