@@ -12,12 +12,17 @@ import { Command, CommandInput, CommandList, CommandEmpty, CommandGroup, Command
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Search, AlertTriangle, HandCoins, CheckSquare, XSquare, ChevronsUpDown, Check, ArrowRightLeft, Clock, ExternalLink, Loader2 } from 'lucide-react';
+import { Search, AlertTriangle, HandCoins, CheckSquare, XSquare, ChevronsUpDown, Check, ArrowRightLeft, Clock, ExternalLink, Loader2, UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Box, Warehouse } from '@/types/database';
 import ParcelHistoryDialog from '@/components/ParcelHistoryDialog';
 import CopyTrackingButton from '@/components/CopyTrackingButton';
 import { logUserAction } from '@/utils/actionLogger';
+
+interface AgentOption {
+  user_id: string;
+  full_name: string;
+}
 
 interface ParcelWithDetails {
   id: string;
@@ -52,7 +57,8 @@ const DonnerRetours: React.FC = () => {
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [boxTransferParcelId, setBoxTransferParcelId] = useState<string | null>(null);
   const [transferFilter, setTransferFilter] = useState<string>('all');
-
+  const [agents, setAgents] = useState<AgentOption[]>([]);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   // Transfer modal state
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [transferParcelIds, setTransferParcelIds] = useState<string[]>([]);
@@ -116,10 +122,45 @@ const DonnerRetours: React.FC = () => {
     setBoxTransferParcelId(null);
   };
 
+  const loadAgents = async () => {
+    const ids = showAll ? warehouseIds : warehouseId ? [warehouseId] : [];
+    if (ids.length === 0) { setAgents([]); return; }
+    const { data } = await supabase
+      .from('user_actions' as any)
+      .select('user_id')
+      .in('warehouse_id', ids)
+      .not('user_id', 'is', null);
+    if (!data || data.length === 0) { setAgents([]); return; }
+    const uniqueIds = Array.from(new Set((data as any[]).map((r: any) => r.user_id).filter(Boolean)));
+    if (uniqueIds.length === 0) { setAgents([]); return; }
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', uniqueIds);
+    setAgents(
+      (profiles || []).map((p: any) => ({ user_id: p.id, full_name: p.full_name || p.id })).sort((a: AgentOption, b: AgentOption) => a.full_name.localeCompare(b.full_name))
+    );
+  };
+
   const loadParcels = async (query: string) => {
     if (!warehouseId && !showAll || !query.trim()) { setParcels([]); return; }
 
     setLoading(true);
+
+    // If agent filter is active, get parcel IDs acted upon by that agent
+    let agentParcelIds: string[] | null = null;
+    if (selectedAgentId) {
+      const ids = showAll ? warehouseIds : warehouseId ? [warehouseId] : [];
+      const { data: actionData } = await supabase
+        .from('user_actions' as any)
+        .select('parcel_id')
+        .eq('user_id', selectedAgentId)
+        .in('warehouse_id', ids)
+        .not('parcel_id', 'is', null);
+      agentParcelIds = Array.from(new Set((actionData || []).map((r: any) => r.parcel_id).filter(Boolean)));
+      if (agentParcelIds.length === 0) { setParcels([]); setLoading(false); return; }
+    }
+
     let dbQuery = supabase
       .from('parcels')
       .select('id, tracking, boutique, box_id, is_missing, created_at, warehouse_id, status, added_by, is_multi_part, part_number, total_parts, transfer_status, destination_warehouse_id, misrouted_at_warehouse_id, boxes(name), profiles:added_by(full_name)')
@@ -140,6 +181,10 @@ const DonnerRetours: React.FC = () => {
     if (transferFilter === 'in_transit') dbQuery = dbQuery.eq('transfer_status', 'in_transit');
     else if (transferFilter === 'misrouted') dbQuery = dbQuery.eq('transfer_status', 'misrouted');
     else if (transferFilter === 'in_stock_only') dbQuery = dbQuery.eq('transfer_status', 'in_stock');
+
+    if (agentParcelIds) {
+      dbQuery = dbQuery.in('id', agentParcelIds);
+    }
 
     const { data } = await dbQuery.order('tracking').order('part_number').limit(200);
 
@@ -259,6 +304,7 @@ const DonnerRetours: React.FC = () => {
     loadBoutiques();
     loadBoxes();
     loadAllWarehouses();
+    loadAgents();
   }, [warehouseId, showAll]);
 
   useEffect(() => {
@@ -278,7 +324,7 @@ const DonnerRetours: React.FC = () => {
     } else {
       setParcels([]);
     }
-  }, [search, searchMode, warehouseId, showAll, transferFilter]);
+  }, [search, searchMode, warehouseId, showAll, transferFilter, selectedAgentId]);
 
   const toggleSelect = (id: string) => {
     const next = new Set(selected);
@@ -485,6 +531,18 @@ const DonnerRetours: React.FC = () => {
                 <SelectItem value="in_stock_only">En stock</SelectItem>
                 <SelectItem value="in_transit">En transfert</SelectItem>
                 <SelectItem value="misrouted">Mal dirigé</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={selectedAgentId || '__all__'} onValueChange={(v) => setSelectedAgentId(v === '__all__' ? null : v)}>
+              <SelectTrigger className="w-44 h-8 text-xs">
+                <UserCheck className="w-3 h-3 mr-1 shrink-0" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Tous les agents</SelectItem>
+                {agents.map((a) => (
+                  <SelectItem key={a.user_id} value={a.user_id}>{a.full_name}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
