@@ -141,6 +141,15 @@ const Warehouses: React.FC = () => {
           </Card>
         ))}
       </div>
+
+      <ExcelImportModal
+        open={showImport}
+        onOpenChange={setShowImport}
+        title="Importer des dépôts"
+        templateColumns={['code', 'name', 'type']}
+        templateFileName="import-warehouses-template.xlsx"
+        onImport={handleImportWarehouses}
+      />
     </div>
   );
 };
