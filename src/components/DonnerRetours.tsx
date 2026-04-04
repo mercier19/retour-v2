@@ -57,7 +57,8 @@ const DonnerRetours: React.FC = () => {
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [boxTransferParcelId, setBoxTransferParcelId] = useState<string | null>(null);
   const [transferFilter, setTransferFilter] = useState<string>('all');
-
+  const [agents, setAgents] = useState<AgentOption[]>([]);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   // Transfer modal state
   const [transferModalOpen, setTransferModalOpen] = useState(false);
   const [transferParcelIds, setTransferParcelIds] = useState<string[]>([]);
