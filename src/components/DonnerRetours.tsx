@@ -122,10 +122,45 @@ const DonnerRetours: React.FC = () => {
     setBoxTransferParcelId(null);
   };
 
+  const loadAgents = async () => {
+    const ids = showAll ? warehouseIds : warehouseId ? [warehouseId] : [];
+    if (ids.length === 0) { setAgents([]); return; }
+    const { data } = await supabase
+      .from('user_actions' as any)
+      .select('user_id')
+      .in('warehouse_id', ids)
+      .not('user_id', 'is', null);
+    if (!data || data.length === 0) { setAgents([]); return; }
+    const uniqueIds = Array.from(new Set((data as any[]).map((r: any) => r.user_id).filter(Boolean)));
+    if (uniqueIds.length === 0) { setAgents([]); return; }
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name')
+      .in('id', uniqueIds);
+    setAgents(
+      (profiles || []).map((p: any) => ({ user_id: p.id, full_name: p.full_name || p.id })).sort((a: AgentOption, b: AgentOption) => a.full_name.localeCompare(b.full_name))
+    );
+  };
+
   const loadParcels = async (query: string) => {
     if (!warehouseId && !showAll || !query.trim()) { setParcels([]); return; }
 
     setLoading(true);
+
+    // If agent filter is active, get parcel IDs acted upon by that agent
+    let agentParcelIds: string[] | null = null;
+    if (selectedAgentId) {
+      const ids = showAll ? warehouseIds : warehouseId ? [warehouseId] : [];
+      const { data: actionData } = await supabase
+        .from('user_actions' as any)
+        .select('parcel_id')
+        .eq('user_id', selectedAgentId)
+        .in('warehouse_id', ids)
+        .not('parcel_id', 'is', null);
+      agentParcelIds = Array.from(new Set((actionData || []).map((r: any) => r.parcel_id).filter(Boolean)));
+      if (agentParcelIds.length === 0) { setParcels([]); setLoading(false); return; }
+    }
+
     let dbQuery = supabase
       .from('parcels')
       .select('id, tracking, boutique, box_id, is_missing, created_at, warehouse_id, status, added_by, is_multi_part, part_number, total_parts, transfer_status, destination_warehouse_id, misrouted_at_warehouse_id, boxes(name), profiles:added_by(full_name)')
@@ -146,6 +181,10 @@ const DonnerRetours: React.FC = () => {
     if (transferFilter === 'in_transit') dbQuery = dbQuery.eq('transfer_status', 'in_transit');
     else if (transferFilter === 'misrouted') dbQuery = dbQuery.eq('transfer_status', 'misrouted');
     else if (transferFilter === 'in_stock_only') dbQuery = dbQuery.eq('transfer_status', 'in_stock');
+
+    if (agentParcelIds) {
+      dbQuery = dbQuery.in('id', agentParcelIds);
+    }
 
     const { data } = await dbQuery.order('tracking').order('part_number').limit(200);
 
