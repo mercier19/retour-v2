@@ -304,6 +304,7 @@ const DonnerRetours: React.FC = () => {
     loadBoutiques();
     loadBoxes();
     loadAllWarehouses();
+    loadAgents();
   }, [warehouseId, showAll]);
 
   useEffect(() => {
@@ -323,7 +324,7 @@ const DonnerRetours: React.FC = () => {
     } else {
       setParcels([]);
     }
-  }, [search, searchMode, warehouseId, showAll, transferFilter]);
+  }, [search, searchMode, warehouseId, showAll, transferFilter, selectedAgentId]);
 
   const toggleSelect = (id: string) => {
     const next = new Set(selected);
