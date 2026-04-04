@@ -8,8 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Plus, Trash2, Building2 } from 'lucide-react';
+import { Plus, Trash2, Building2, FileSpreadsheet } from 'lucide-react';
 import { Profile, Warehouse, AppRole } from '@/types/database';
+import ExcelImportModal from '@/components/ExcelImportModal';
 
 const ROLES: { value: AppRole; label: string }[] = [
   { value: 'operations', label: 'Opérations' },
