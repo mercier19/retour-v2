@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Plus, Edit2, Check, X } from 'lucide-react';
+import { Plus, Edit2, Check, X, FileSpreadsheet } from 'lucide-react';
 import { Warehouse } from '@/types/database';
+import ExcelImportModal from '@/components/ExcelImportModal';
 
 const TYPES = [
   { value: 'centre_tri', label: 'Centre de tri' },
