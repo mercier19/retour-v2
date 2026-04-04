@@ -116,7 +116,7 @@ const AdvancedStatistics: React.FC = () => {
       loadData();
       loadUserActivity();
     }
-  }, [warehouseIds.length, dateRange, isAllowed]);
+  }, [warehouseIds.length, dateRange, isAllowed, includeArchived]);
 
   const fetchAllParcels = async (warehouseIds: string[], startDate: string | null) => {
     const PAGE_SIZE = 1000;
