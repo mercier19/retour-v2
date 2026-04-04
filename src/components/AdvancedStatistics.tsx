@@ -527,6 +527,10 @@ const AdvancedStatistics: React.FC = () => {
               ))}
             </SelectContent>
           </Select>
+          <div className="flex items-center gap-1.5">
+            <Switch id="include-archived" checked={includeArchived} onCheckedChange={setIncludeArchived} />
+            <Label htmlFor="include-archived" className="text-xs cursor-pointer whitespace-nowrap">Inclure archivés</Label>
+          </div>
           <Button variant="outline" size="sm" onClick={exportCSV} className="h-8 text-xs gap-1">
             <Download className="w-3.5 h-3.5" /> CSV
           </Button>
