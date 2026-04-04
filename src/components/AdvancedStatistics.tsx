@@ -94,6 +94,7 @@ const AdvancedStatistics: React.FC = () => {
   const [userRanking, setUserRanking] = useState<UserRankingItem[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [exportingPPTX, setExportingPPTX] = useState(false);
+  const [includeArchived, setIncludeArchived] = useState(false);
 
   const isAllowed = hasRole('regional', 'super_admin');
 
