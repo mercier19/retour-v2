@@ -533,6 +533,18 @@ const DonnerRetours: React.FC = () => {
                 <SelectItem value="misrouted">Mal dirigé</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={selectedAgentId || '__all__'} onValueChange={(v) => setSelectedAgentId(v === '__all__' ? null : v)}>
+              <SelectTrigger className="w-44 h-8 text-xs">
+                <UserCheck className="w-3 h-3 mr-1 shrink-0" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Tous les agents</SelectItem>
+                {agents.map((a) => (
+                  <SelectItem key={a.user_id} value={a.user_id}>{a.full_name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           {searchMode === 'boutique' ? (
             <Popover open={open} onOpenChange={setOpen}>
