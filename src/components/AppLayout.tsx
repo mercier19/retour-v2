@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useWarehouse } from '@/contexts/WarehouseContext';
-import { useWarehouseFilter } from '@/hooks/useWarehouseFilter';
+import { usePermission } from '@/hooks/usePermission';
 import WarehouseSelector from '@/components/WarehouseSelector';
 import Dashboard from '@/components/Dashboard';
 import AddParcel from '@/components/AddParcel';
@@ -14,35 +14,55 @@ import SearchParcels from '@/components/SearchParcels';
 import TransferParcels from '@/components/TransferParcels';
 import Users from '@/components/admin/Users';
 import Warehouses from '@/components/admin/Warehouses';
+import Permissions from '@/components/admin/Permissions';
 import { Button } from '@/components/ui/button';
 import yalidinelogo from '@/assets/logo_yalidine.png';
 import InventorySchedule from '@/components/InventorySchedule';
 import InventoryExecution from '@/components/InventoryExecution';
 import {
-  LayoutDashboard,
-  Plus,
-  BoxIcon,
-  HandCoins,
-  PackageCheck,
-  BarChart3,
-  Search,
-  Users as UsersIcon,
-  Building2,
-  LogOut,
-  Menu,
-  X,
-  ArrowRightLeft,
-  ClipboardCheck } from
-'lucide-react';
+  LayoutDashboard, Plus, BoxIcon, HandCoins, PackageCheck, BarChart3,
+  Search, Users as UsersIcon, Building2, LogOut, Menu, X,
+  ArrowRightLeft, ClipboardCheck, Shield,
+} from 'lucide-react';
 
-type Page = 'dashboard' | 'add' | 'boxes' | 'retours' | 'stock' | 'stats' | 'advanced-stats' | 'search' | 'transfer' | 'inventory' | 'users' | 'warehouses';
+type Page = 'dashboard' | 'add' | 'boxes' | 'retours' | 'stock' | 'stats' | 'advanced-stats' | 'search' | 'transfer' | 'inventory' | 'users' | 'warehouses' | 'permissions';
+
+const NAV_PERMISSION_MAP: Record<string, string> = {
+  dashboard: 'page_dashboard',
+  add: 'page_add_parcel',
+  boxes: 'page_boxes',
+  retours: 'page_donner_retours',
+  stock: 'page_stock_control',
+  stats: 'page_statistics',
+  'advanced-stats': 'page_advanced_stats',
+  search: 'page_search',
+  transfer: 'page_transfer',
+  inventory: 'page_inventory',
+  users: 'page_admin_users',
+  warehouses: 'page_admin_warehouses',
+  permissions: 'page_admin_permissions',
+};
 
 const AppLayout: React.FC = () => {
   const { profile, signOut } = useAuth();
   const { currentWarehouse } = useWarehouse();
-  const { hasRole, isAdmin, canManageBoxes, canManageStock } = useWarehouseFilter();
   const [page, setPage] = useState<Page>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Permission checks for each page
+  const canDashboard = usePermission('page_dashboard');
+  const canAdd = usePermission('page_add_parcel');
+  const canBoxes = usePermission('page_boxes');
+  const canRetours = usePermission('page_donner_retours');
+  const canStock = usePermission('page_stock_control');
+  const canStats = usePermission('page_statistics');
+  const canAdvStats = usePermission('page_advanced_stats');
+  const canSearch = usePermission('page_search');
+  const canTransfer = usePermission('page_transfer');
+  const canInventory = usePermission('page_inventory');
+  const canUsers = usePermission('page_admin_users');
+  const canWarehouses = usePermission('page_admin_warehouses');
+  const canPermissions = usePermission('page_admin_permissions');
 
   if (!currentWarehouse) {
     return (
@@ -52,51 +72,54 @@ const AppLayout: React.FC = () => {
           <p className="text-muted-foreground">Aucun dépôt assigné. Contactez un administrateur.</p>
           <Button variant="outline" onClick={signOut}>Se déconnecter</Button>
         </div>
-      </div>);
-
+      </div>
+    );
   }
 
-  const navItems: {id: Page;label: string;icon: React.ElementType;show: boolean;}[] = [
-  { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, show: true },
-  { id: 'add', label: 'Ajouter', icon: Plus, show: true },
-  { id: 'boxes', label: 'Boxes', icon: BoxIcon, show: canManageBoxes },
-  { id: 'retours', label: 'Donner retours', icon: HandCoins, show: true },
-  { id: 'stock', label: 'Contrôle stock', icon: PackageCheck, show: canManageStock },
-  { id: 'stats', label: 'Statistiques', icon: BarChart3, show: true },
-  { id: 'advanced-stats', label: 'Stats avancées', icon: BarChart3, show: hasRole('regional', 'super_admin') },
-  { id: 'search', label: 'Rechercher', icon: Search, show: true },
-  { id: 'transfer', label: 'Transférer', icon: ArrowRightLeft, show: true },
-  { id: 'inventory', label: 'Inventaires', icon: ClipboardCheck, show: hasRole('regional', 'chef_agence', 'super_admin') },
-  { id: 'users', label: 'Utilisateurs', icon: UsersIcon, show: isAdmin },
-  { id: 'warehouses', label: 'Dépôts', icon: Building2, show: isAdmin }];
-
+  const navItems: { id: Page; label: string; icon: React.ElementType; show: boolean }[] = [
+    { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard, show: canDashboard },
+    { id: 'add', label: 'Ajouter', icon: Plus, show: canAdd },
+    { id: 'boxes', label: 'Boxes', icon: BoxIcon, show: canBoxes },
+    { id: 'retours', label: 'Donner retours', icon: HandCoins, show: canRetours },
+    { id: 'stock', label: 'Contrôle stock', icon: PackageCheck, show: canStock },
+    { id: 'stats', label: 'Statistiques', icon: BarChart3, show: canStats },
+    { id: 'advanced-stats', label: 'Stats avancées', icon: BarChart3, show: canAdvStats },
+    { id: 'search', label: 'Rechercher', icon: Search, show: canSearch },
+    { id: 'transfer', label: 'Transférer', icon: ArrowRightLeft, show: canTransfer },
+    { id: 'inventory', label: 'Inventaires', icon: ClipboardCheck, show: canInventory },
+    { id: 'users', label: 'Utilisateurs', icon: UsersIcon, show: canUsers },
+    { id: 'warehouses', label: 'Dépôts', icon: Building2, show: canWarehouses },
+    { id: 'permissions', label: 'Permissions', icon: Shield, show: canPermissions },
+  ];
 
   const renderPage = () => {
     switch (page) {
-      case 'dashboard':return <Dashboard />;
-      case 'add':return <AddParcel />;
-      case 'boxes':return canManageBoxes ? <Boxes /> : null;
-      case 'retours':return <DonnerRetours />;
-      case 'stock':return canManageStock ? <StockControl /> : null;
-      case 'stats':return <Statistics />;
-      case 'advanced-stats':return hasRole('regional', 'super_admin') ? <AdvancedStatistics /> : null;
-      case 'search':return <SearchParcels />;
-      case 'transfer':return <TransferParcels />;
-      case 'inventory':return hasRole('regional', 'super_admin')
-        ? <div className="space-y-8"><InventorySchedule /><InventoryExecution /></div>
-        : hasRole('chef_agence') ? <InventoryExecution /> : null;
-      case 'users':return isAdmin ? <Users /> : null;
-      case 'warehouses':return isAdmin ? <Warehouses /> : null;
-      default:return <Dashboard />;
+      case 'dashboard': return canDashboard ? <Dashboard /> : null;
+      case 'add': return canAdd ? <AddParcel /> : null;
+      case 'boxes': return canBoxes ? <Boxes /> : null;
+      case 'retours': return canRetours ? <DonnerRetours /> : null;
+      case 'stock': return canStock ? <StockControl /> : null;
+      case 'stats': return canStats ? <Statistics /> : null;
+      case 'advanced-stats': return canAdvStats ? <AdvancedStatistics /> : null;
+      case 'search': return canSearch ? <SearchParcels /> : null;
+      case 'transfer': return canTransfer ? <TransferParcels /> : null;
+      case 'inventory': return canInventory ? (
+        <div className="space-y-8">
+          <InventorySchedule />
+          <InventoryExecution />
+        </div>
+      ) : null;
+      case 'users': return canUsers ? <Users /> : null;
+      case 'warehouses': return canWarehouses ? <Warehouses /> : null;
+      case 'permissions': return canPermissions ? <Permissions /> : null;
+      default: return <Dashboard />;
     }
   };
 
   return (
     <div className="min-h-screen flex bg-background">
-      {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-sidebar transform transition-transform duration-200 lg:relative lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full">
-          {/* Logo */}
           <div className="p-4 flex items-center gap-3 border-b border-sidebar-border">
             <img alt="Yalidine" className="h-8 brightness-0 invert" src="/lovable-uploads/24bc57ab-84b1-4b7c-a9a7-1ed16fe9536f.png" />
             <div className="ml-auto flex items-center gap-2">
@@ -106,31 +129,25 @@ const AppLayout: React.FC = () => {
               </button>
             </div>
           </div>
-
-          {/* Warehouse Selector */}
           <div className="p-3">
             <WarehouseSelector />
           </div>
-
-          {/* Nav */}
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
             {navItems.filter((item) => item.show).map((item) =>
-            <button
-              key={item.id}
-              onClick={() => {setPage(item.id);setSidebarOpen(false);}}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-              page === item.id ?
-              'bg-sidebar-primary text-sidebar-primary-foreground' :
-              'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'}`
-              }>
-              
+              <button
+                key={item.id}
+                onClick={() => { setPage(item.id); setSidebarOpen(false); }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                  page === item.id
+                    ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                }`}
+              >
                 <item.icon className="w-4 h-4 shrink-0" />
                 {item.label}
               </button>
             )}
           </nav>
-
-          {/* User */}
           <div className="p-3 border-t border-sidebar-border">
             <div className="flex items-center gap-3 px-3 py-2">
               <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center text-xs font-medium text-sidebar-foreground">
@@ -147,11 +164,7 @@ const AppLayout: React.FC = () => {
           </div>
         </div>
       </aside>
-
-      {/* Overlay */}
       {sidebarOpen && <div className="fixed inset-0 z-40 bg-foreground/20 lg:hidden" onClick={() => setSidebarOpen(false)} />}
-
-      {/* Main */}
       <main className="flex-1 min-w-0">
         <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-sm border-b border-border px-4 py-3 lg:hidden flex items-center gap-3">
           <button onClick={() => setSidebarOpen(true)}>
@@ -163,8 +176,8 @@ const AppLayout: React.FC = () => {
           {renderPage()}
         </div>
       </main>
-    </div>);
-
+    </div>
+  );
 };
 
 export default AppLayout;
