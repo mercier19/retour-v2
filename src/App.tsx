@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { WarehouseProvider } from "@/contexts/WarehouseContext";
+import { PermissionProvider } from "@/contexts/PermissionContext";
 import AppLayout from "@/components/AppLayout";
 import Login from "@/components/Login";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,7 +23,9 @@ const AuthGate = () => {
   if (!user) return <Login />;
   return (
     <WarehouseProvider>
-      <AppLayout />
+      <PermissionProvider>
+        <AppLayout />
+      </PermissionProvider>
     </WarehouseProvider>
   );
 };

@@ -64,3 +64,12 @@ export interface ArchivedParcel {
   part_number: number;
   total_parts: number;
 }
+
+export interface UserPermission {
+  id: string;
+  user_id: string;
+  permission_key: string;
+  granted: boolean;
+  created_at: string;
+  updated_at: string;
+}
