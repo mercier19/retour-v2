@@ -1,75 +1,112 @@
 
 
-## Inventory Management System
+## Admin Permissions System
 
 ### Overview
-Add a full inventory system: regional users schedule inventories (one-time or recurring), warehouse staff execute them by scanning parcels box-by-box, and reports show discrepancies.
+Create a fine-grained permissions system: a `user_permissions` table for per-user overrides, a `usePermission` hook for checking access throughout the app, and an admin page for managing it all.
 
 ---
 
-### Phase 1 — Database Migration (1 migration)
+### Phase 1 — Database Migration
 
-**4 new tables** (all using UUID PKs, consistent with existing schema):
+**New table: `user_permissions`**
+- Columns: `id` (UUID PK), `user_id` (UUID FK → profiles), `permission_key` (TEXT), `granted` (BOOLEAN), `created_at`, `updated_at`
+- Unique constraint on `(user_id, permission_key)`
+- RLS: super_admin can do ALL; users can SELECT their own rows
 
-- **`scheduled_inventories`** — warehouse_id, scheduled_date, created_by, status (pending/completed/overdue/cancelled), is_recurring, interval_days
-- **`inventory_sessions`** — links to scheduled_inventory, warehouse_id, started_at, completed_at, completed_by, notes
-- **`inventory_checks`** — per-box results: session FK, box_id (UUID), expected_count, actual_count, discrepancies (JSONB: `{missing: [...], extra: [...]}`)
-- **`inventory_notifications`** — user_id, warehouse_id, type (warning/overdue/reminder), message, read, dismissed
-
-**RLS:** Warehouse-scoped SELECT; regional/super_admin manage schedules; chef_agence/operations/super_admin execute sessions and checks; notifications are user-scoped.
-
-**Trigger:** After `inventory_sessions.completed_at` transitions to non-NULL, auto-create next scheduled inventory if parent is recurring.
-
-**RPC:** `check_overdue_inventories()` — marks pending as overdue, creates notifications for relevant users.
-
-**Indexes** on warehouse_id, session_id, user_id columns.
-
-Uses validation triggers (not CHECK constraints) for status/type fields. FK references go to `profiles.id`, not `auth.users`.
+**No CHECK constraint on permission_key** — validated at the application level.
 
 ---
 
-### Phase 2 — New Components
+### Phase 2 — Permission Defaults Map + Hook
 
-**`src/components/InventorySchedule.tsx`** — Planning (regional/super_admin)
-- Create form: warehouse dropdown, datetime, recurring toggle + interval
-- Table of scheduled inventories with status badges, edit/cancel actions
+**`src/hooks/usePermission.ts`**
+- Define a `DEFAULT_ROLE_PERMISSIONS` map: for each role, which permission keys are granted by default
+- Fetch current user's `user_permissions` rows once (cached in state/context)
+- `usePermission(key: string) → boolean`:
+  - super_admin → always true
+  - If override exists in `user_permissions` → use `granted` value
+  - Otherwise → use role default from map
+- Also export `usePermissions()` returning the full resolved map (for the admin page)
 
-**`src/components/InventoryExecution.tsx`** — Scanning (chef_agence/operations/super_admin)
-- Select box → see expected parcels → scan field (reusing AddParcel QR pattern)
-- Match scan against expected: ✅ success sound / ❌ error sound + "extra" list
-- Live counter (scanned / expected)
-- "Finish box" saves inventory_check with discrepancies JSON
-- "Close inventory" sets completed_at, triggers recurrence
-
-**`src/components/InventoryReports.tsx`** — Reporting
-- Table of completed sessions with details modal (per-box breakdown)
-- Excel export (dynamic xlsx import per existing pattern)
+**`src/contexts/PermissionContext.tsx`**
+- Wraps the app inside AuthProvider, loads user_permissions on login
+- Provides permissions data to the hook
 
 ---
 
-### Phase 3 — Navigation & Integration
+### Phase 3 — Admin Permissions Page
 
-**`AppLayout.tsx`:**
-- Add `'inventory'` page type with "Inventaires" nav item (ClipboardCheck icon)
-- Visible for regional, chef_agence, super_admin
-- Routes to InventorySchedule (regional/super_admin) or InventoryExecution (others)
+**`src/components/admin/Permissions.tsx`**
 
-**`Dashboard.tsx`:**
-- New card: next scheduled inventory date, overdue badge, "Lancer l'inventaire" button
-- Notification alerts from inventory_notifications
+**Section 1 — Individual user management:**
+- Searchable user dropdown (all profiles)
+- Role editor (dropdown of 4 roles)
+- Permission table grouped by category (Pages / Actions), each with a Switch toggle
+- Visual indicator when a permission differs from role default ("Personnalisé" badge)
+- "Apply" button: updates `profiles.role` if changed + upserts `user_permissions` for overrides only
+- "Reset" button: deletes all `user_permissions` for that user
 
-**`AdvancedStatistics.tsx`:**
-- New "Inventaires" tab embedding InventoryReports
+**Section 2 — Bulk operations:**
+- User list with checkboxes for multi-select
+- Actions panel:
+  - Change role for all selected
+  - Grant/revoke a specific permission for all selected
+  - Reset all overrides for selected
+- Confirmation with count of affected users before applying
 
 ---
 
-### Phase 4 — Sound & UX
-- Reuse `useSound` hook for scan feedback
-- Preload all box parcels at session start (avoid per-scan queries)
-- JSONB discrepancies for easy frontend rendering
+### Phase 4 — App Integration
+
+**`src/components/AppLayout.tsx`:**
+- Add `'permissions'` to Page type
+- Add nav item "Permissions" (Shield icon), visible only for super_admin
+- Replace current `show` logic in navItems to use `usePermission('page_xxx')` for each page
+- Render `<Permissions />` for the permissions page
+
+**Component-level guards:**
+- In components that perform protected actions (transfer, give parcels, mark missing, etc.), use `usePermission('action_xxx')` to conditionally render or disable buttons
+
+---
 
 ### Files
-- **New:** `InventorySchedule.tsx`, `InventoryExecution.tsx`, `InventoryReports.tsx`
-- **Modified:** `AppLayout.tsx`, `Dashboard.tsx`, `AdvancedStatistics.tsx`
-- **Migration:** 1 file (4 tables + RLS + trigger + function + indexes)
+
+- **New:** `src/hooks/usePermission.ts`, `src/contexts/PermissionContext.tsx`, `src/components/admin/Permissions.tsx`
+- **Modified:** `src/components/AppLayout.tsx` (nav + page routing + permission checks), `src/App.tsx` (wrap with PermissionProvider), `src/types/database.ts` (add UserPermission type)
+- **Migration:** 1 file (user_permissions table + RLS)
+
+### Permission Keys
+
+**Pages:** `page_dashboard`, `page_add_parcel`, `page_boxes`, `page_donner_retours`, `page_stock_control`, `page_statistics`, `page_advanced_stats`, `page_search`, `page_transfer`, `page_inventory`, `page_admin_users`, `page_admin_warehouses`, `page_admin_permissions`
+
+**Actions:** `action_transfer_parcel`, `action_give_parcels`, `action_mark_missing`, `action_clear_box`, `action_export_excel`, `action_export_pptx`, `action_edit_box`, `action_plan_inventory`, `action_execute_inventory`
+
+### Default Role Map (example)
+
+```text
+                        operations  chef_agence  regional  super_admin
+page_dashboard              ✓           ✓          ✓          ✓
+page_add_parcel             ✓           ✓          ✓          ✓
+page_boxes                  ✗           ✓          ✓          ✓
+page_donner_retours         ✓           ✓          ✓          ✓
+page_stock_control          ✗           ✗          ✓          ✓
+page_statistics             ✓           ✓          ✓          ✓
+page_advanced_stats         ✗           ✗          ✓          ✓
+page_search                 ✓           ✓          ✓          ✓
+page_transfer               ✓           ✓          ✓          ✓
+page_inventory              ✗           ✓          ✓          ✓
+page_admin_users            ✗           ✗          ✗          ✓
+page_admin_warehouses       ✗           ✗          ✗          ✓
+page_admin_permissions      ✗           ✗          ✗          ✓
+action_give_parcels         ✓           ✓          ✓          ✓
+action_mark_missing         ✓           ✓          ✓          ✓
+action_transfer_parcel      ✓           ✓          ✓          ✓
+action_clear_box            ✗           ✓          ✓          ✓
+action_edit_box             ✗           ✓          ✓          ✓
+action_export_excel         ✓           ✓          ✓          ✓
+action_export_pptx          ✗           ✗          ✓          ✓
+action_plan_inventory       ✗           ✗          ✓          ✓
+action_execute_inventory    ✗           ✓          ✓          ✓
+```
 
