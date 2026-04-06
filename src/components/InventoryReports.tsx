@@ -48,6 +48,7 @@ const InventoryReports: React.FC = () => {
   const [boxNames, setBoxNames] = useState<Record<string, string>>({});
   const [profileNames, setProfileNames] = useState<Record<string, string>>({});
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [pdfSession, setPdfSession] = useState<InventorySession | null>(null);
 
   const warehouseNameMap = Object.fromEntries(warehouses.map(w => [w.id, w.name]));
 
