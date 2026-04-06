@@ -312,7 +312,7 @@ const AddParcel: React.FC = () => {
 
     const parcelData: any = {
       warehouse_id: warehouseId,
-      tracking: tracking.trim(),
+      tracking: normalizedTracking,
       box_id: boxId || null,
       boutique: boutique.trim() || null,
       added_by: cachedUserId.current,
