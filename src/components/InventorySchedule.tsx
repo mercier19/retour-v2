@@ -65,7 +65,20 @@ const InventorySchedule: React.FC = () => {
       .in('warehouse_id', warehouseIds)
       .order('scheduled_date', { ascending: false });
 
-    if (data) setInventories(data as unknown as ScheduledInventory[]);
+    if (data) {
+      const invs = data as unknown as ScheduledInventory[];
+      setInventories(invs);
+      // Load creator names
+      const creatorIds = [...new Set(invs.map(i => i.created_by).filter(Boolean))] as string[];
+      if (creatorIds.length > 0) {
+        const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', creatorIds);
+        if (profiles) {
+          const map: Record<string, string> = {};
+          profiles.forEach((p: any) => { map[p.id] = p.full_name || p.id.substring(0, 8); });
+          setCreatorNames(map);
+        }
+      }
+    }
     if (error) toast.error('Erreur chargement: ' + error.message);
     setLoading(false);
   };
