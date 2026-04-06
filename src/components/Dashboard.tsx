@@ -83,7 +83,7 @@ const Dashboard: React.FC = () => {
     const targetIds = showAll ? warehouseIds : [warehouseId!];
     const { data } = await supabase
       .from('scheduled_inventories')
-      .select('id, scheduled_date, status')
+      .select('id, scheduled_date, status, warehouse_id')
       .in('warehouse_id', targetIds)
       .in('status', ['pending', 'overdue'])
       .order('scheduled_date', { ascending: true })
