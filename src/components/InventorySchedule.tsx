@@ -214,8 +214,10 @@ const InventorySchedule: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Dépôt</TableHead>
+                 <TableHead>Dépôt</TableHead>
                   <TableHead>Date</TableHead>
+                  <TableHead>Créé par</TableHead>
+                  <TableHead>Date de création</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead>Récurrent</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
