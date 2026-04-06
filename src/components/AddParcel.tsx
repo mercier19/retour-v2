@@ -352,7 +352,7 @@ const AddParcel: React.FC = () => {
       return;
     }
     const parts = qrInput.split(',');
-    const t = parts[1]?.trim();
+    const t = parts[1]?.trim()?.toUpperCase();
     if (!t) { toast.error('Format QR invalide'); playError(); return; }
 
     // Clear input immediately so scanner is ready for next scan
