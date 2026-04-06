@@ -48,6 +48,7 @@ const InventorySchedule: React.FC = () => {
   const [formRecurring, setFormRecurring] = useState(false);
   const [formInterval, setFormInterval] = useState(30);
   const [saving, setSaving] = useState(false);
+  const [creatorNames, setCreatorNames] = useState<Record<string, string>>({});
 
   // Filter
   const [filterStatus, setFilterStatus] = useState<string>('all');
