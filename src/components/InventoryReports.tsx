@@ -172,9 +172,14 @@ const InventoryReports: React.FC = () => {
                 <TableCell>{session.completed_by ? (profileNames[session.completed_by] || '?') : '—'}</TableCell>
                 <TableCell className="max-w-[200px] truncate">{session.notes || '—'}</TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="sm" className="gap-1" onClick={() => openDetails(session)}>
-                    <Eye className="w-3.5 h-3.5" /> Détails
-                  </Button>
+                  <div className="flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="sm" className="gap-1" onClick={() => openDetails(session)}>
+                      <Eye className="w-3.5 h-3.5" /> Détails
+                    </Button>
+                    <Button variant="ghost" size="sm" className="gap-1" onClick={() => setPdfSession(session)}>
+                      <FileText className="w-3.5 h-3.5" /> PDF
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
