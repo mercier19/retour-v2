@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Eye, ClipboardCheck } from 'lucide-react';
+import { Download, Eye, ClipboardCheck, FileText } from 'lucide-react';
+import InventoryReportModal from './InventoryReportModal';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
@@ -47,6 +48,7 @@ const InventoryReports: React.FC = () => {
   const [boxNames, setBoxNames] = useState<Record<string, string>>({});
   const [profileNames, setProfileNames] = useState<Record<string, string>>({});
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [pdfSession, setPdfSession] = useState<InventorySession | null>(null);
 
   const warehouseNameMap = Object.fromEntries(warehouses.map(w => [w.id, w.name]));
 
@@ -170,9 +172,14 @@ const InventoryReports: React.FC = () => {
                 <TableCell>{session.completed_by ? (profileNames[session.completed_by] || '?') : '—'}</TableCell>
                 <TableCell className="max-w-[200px] truncate">{session.notes || '—'}</TableCell>
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="sm" className="gap-1" onClick={() => openDetails(session)}>
-                    <Eye className="w-3.5 h-3.5" /> Détails
-                  </Button>
+                  <div className="flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="sm" className="gap-1" onClick={() => openDetails(session)}>
+                      <Eye className="w-3.5 h-3.5" /> Détails
+                    </Button>
+                    <Button variant="ghost" size="sm" className="gap-1" onClick={() => setPdfSession(session)}>
+                      <FileText className="w-3.5 h-3.5" /> PDF
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -246,6 +253,16 @@ const InventoryReports: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* PDF Report Modal */}
+      {pdfSession && (
+        <InventoryReportModal
+          session={pdfSession}
+          warehouseName={warehouseNameMap[pdfSession.warehouse_id] || '?'}
+          open={!!pdfSession}
+          onOpenChange={(open) => { if (!open) setPdfSession(null); }}
+        />
+      )}
     </div>
   );
 };

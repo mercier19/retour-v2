@@ -31,7 +31,7 @@ const Dashboard: React.FC = () => {
   const [boxes, setBoxes] = useState<(Box & { parcel_count: number })[]>([]);
   const [misroutedParcels, setMisroutedParcels] = useState<MisroutedParcel[]>([]);
   const [warehouseNames, setWarehouseNames] = useState<Record<string, string>>({});
-  const [nextInventory, setNextInventory] = useState<{ id: string; scheduled_date: string; status: string } | null>(null);
+  const [nextInventory, setNextInventory] = useState<{ id: string; scheduled_date: string; status: string; warehouse_id: string } | null>(null);
   const [inventoryNotifications, setInventoryNotifications] = useState<{ id: string; type: string; message: string }[]>([]);
 
   // Resolve modal state
@@ -83,7 +83,7 @@ const Dashboard: React.FC = () => {
     const targetIds = showAll ? warehouseIds : [warehouseId!];
     const { data } = await supabase
       .from('scheduled_inventories')
-      .select('id, scheduled_date, status')
+      .select('id, scheduled_date, status, warehouse_id')
       .in('warehouse_id', targetIds)
       .in('status', ['pending', 'overdue'])
       .order('scheduled_date', { ascending: true })
@@ -220,6 +220,9 @@ const Dashboard: React.FC = () => {
             <div className="flex-1">
               <p className="text-sm font-medium">
                 Prochain inventaire : {format(new Date(nextInventory.scheduled_date), 'dd/MM/yyyy HH:mm', { locale: fr })}
+                {nextInventory.warehouse_id && warehouseNames[nextInventory.warehouse_id] && (
+                  <span className="text-muted-foreground"> — {warehouseNames[nextInventory.warehouse_id]}</span>
+                )}
               </p>
               {nextInventory.status === 'overdue' && (
                 <Badge variant="destructive" className="mt-1 text-xs">En retard</Badge>

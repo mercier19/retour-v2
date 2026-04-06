@@ -153,22 +153,25 @@ const InventoryExecution: React.FC = () => {
 
   const handleScan = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== 'Enter') return;
-    const tracking = scanInput.trim();
+    const tracking = scanInput.trim().toUpperCase();
     if (!tracking) return;
 
-    if (scannedTrackings.has(tracking) || extraTrackings.includes(tracking)) {
+    const upperTracking = tracking.toUpperCase();
+
+    if (scannedTrackings.has(upperTracking) || extraTrackings.includes(upperTracking)) {
       playError();
       toast.error('Déjà scanné');
+      setScanInput('');
       return;
     }
 
-    const isExpected = expectedParcels.some(p => p.tracking === tracking);
+    const isExpected = expectedParcels.some(p => p.tracking === upperTracking);
     if (isExpected) {
       playSuccess();
-      setScannedTrackings(prev => new Set(prev).add(tracking));
+      setScannedTrackings(prev => new Set(prev).add(upperTracking));
     } else {
       playError();
-      setExtraTrackings(prev => [...prev, tracking]);
+      setExtraTrackings(prev => [...prev, upperTracking]);
       toast.warning('Colis non attendu dans cette box');
     }
     setScanInput('');

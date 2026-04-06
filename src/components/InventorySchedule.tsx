@@ -48,6 +48,7 @@ const InventorySchedule: React.FC = () => {
   const [formRecurring, setFormRecurring] = useState(false);
   const [formInterval, setFormInterval] = useState(30);
   const [saving, setSaving] = useState(false);
+  const [creatorNames, setCreatorNames] = useState<Record<string, string>>({});
 
   // Filter
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -64,7 +65,20 @@ const InventorySchedule: React.FC = () => {
       .in('warehouse_id', warehouseIds)
       .order('scheduled_date', { ascending: false });
 
-    if (data) setInventories(data as unknown as ScheduledInventory[]);
+    if (data) {
+      const invs = data as unknown as ScheduledInventory[];
+      setInventories(invs);
+      // Load creator names
+      const creatorIds = [...new Set(invs.map(i => i.created_by).filter(Boolean))] as string[];
+      if (creatorIds.length > 0) {
+        const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', creatorIds);
+        if (profiles) {
+          const map: Record<string, string> = {};
+          profiles.forEach((p: any) => { map[p.id] = p.full_name || p.id.substring(0, 8); });
+          setCreatorNames(map);
+        }
+      }
+    }
     if (error) toast.error('Erreur chargement: ' + error.message);
     setLoading(false);
   };
@@ -200,8 +214,10 @@ const InventorySchedule: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Dépôt</TableHead>
+                 <TableHead>Dépôt</TableHead>
                   <TableHead>Date</TableHead>
+                  <TableHead>Créé par</TableHead>
+                  <TableHead>Date de création</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead>Récurrent</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -214,6 +230,8 @@ const InventorySchedule: React.FC = () => {
                     <TableRow key={inv.id}>
                       <TableCell className="font-medium">{warehouseNameMap[inv.warehouse_id] || '?'}</TableCell>
                       <TableCell>{format(new Date(inv.scheduled_date), 'dd/MM/yyyy HH:mm', { locale: fr })}</TableCell>
+                      <TableCell className="text-sm">{inv.created_by ? (creatorNames[inv.created_by] || '?') : '—'}</TableCell>
+                      <TableCell className="text-sm">{format(new Date(inv.created_at), 'dd/MM/yyyy HH:mm', { locale: fr })}</TableCell>
                       <TableCell>
                         <Badge variant={badge.variant}>{badge.label}</Badge>
                       </TableCell>
