@@ -230,6 +230,8 @@ const InventorySchedule: React.FC = () => {
                     <TableRow key={inv.id}>
                       <TableCell className="font-medium">{warehouseNameMap[inv.warehouse_id] || '?'}</TableCell>
                       <TableCell>{format(new Date(inv.scheduled_date), 'dd/MM/yyyy HH:mm', { locale: fr })}</TableCell>
+                      <TableCell className="text-sm">{inv.created_by ? (creatorNames[inv.created_by] || '?') : '—'}</TableCell>
+                      <TableCell className="text-sm">{format(new Date(inv.created_at), 'dd/MM/yyyy HH:mm', { locale: fr })}</TableCell>
                       <TableCell>
                         <Badge variant={badge.variant}>{badge.label}</Badge>
                       </TableCell>

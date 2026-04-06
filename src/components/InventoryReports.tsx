@@ -253,6 +253,16 @@ const InventoryReports: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* PDF Report Modal */}
+      {pdfSession && (
+        <InventoryReportModal
+          session={pdfSession}
+          warehouseName={warehouseNameMap[pdfSession.warehouse_id] || '?'}
+          open={!!pdfSession}
+          onOpenChange={(open) => { if (!open) setPdfSession(null); }}
+        />
+      )}
     </div>
   );
 };

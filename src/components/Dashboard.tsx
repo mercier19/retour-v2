@@ -220,6 +220,9 @@ const Dashboard: React.FC = () => {
             <div className="flex-1">
               <p className="text-sm font-medium">
                 Prochain inventaire : {format(new Date(nextInventory.scheduled_date), 'dd/MM/yyyy HH:mm', { locale: fr })}
+                {nextInventory.warehouse_id && warehouseNames[nextInventory.warehouse_id] && (
+                  <span className="text-muted-foreground"> — {warehouseNames[nextInventory.warehouse_id]}</span>
+                )}
               </p>
               {nextInventory.status === 'overdue' && (
                 <Badge variant="destructive" className="mt-1 text-xs">En retard</Badge>

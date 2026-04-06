@@ -177,7 +177,7 @@ const InventoryExecution: React.FC = () => {
       setScannedTrackings(prev => new Set(prev).add(upperTracking));
     } else {
       playError();
-      setExtraTrackings(prev => [...prev, tracking]);
+      setExtraTrackings(prev => [...prev, upperTracking]);
       toast.warning('Colis non attendu dans cette box');
     }
     setScanInput('');
