@@ -31,7 +31,7 @@ const Dashboard: React.FC = () => {
   const [boxes, setBoxes] = useState<(Box & { parcel_count: number })[]>([]);
   const [misroutedParcels, setMisroutedParcels] = useState<MisroutedParcel[]>([]);
   const [warehouseNames, setWarehouseNames] = useState<Record<string, string>>({});
-  const [nextInventory, setNextInventory] = useState<{ id: string; scheduled_date: string; status: string } | null>(null);
+  const [nextInventory, setNextInventory] = useState<{ id: string; scheduled_date: string; status: string; warehouse_id: string } | null>(null);
   const [inventoryNotifications, setInventoryNotifications] = useState<{ id: string; type: string; message: string }[]>([]);
 
   // Resolve modal state
