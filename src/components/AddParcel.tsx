@@ -279,6 +279,8 @@ const AddParcel: React.FC = () => {
     setLoading(false);
   };
 
+  const TRACKING_REGEX = /^(YAL|ECH|ACC|RCC)-[A-Z0-9]{6}$/i;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!warehouseId || !tracking.trim()) {
@@ -286,14 +288,22 @@ const AddParcel: React.FC = () => {
       return;
     }
     if (!boxId) {
-toast.error('Veuillez sélectionner une box');
+      toast.error('Veuillez sélectionner une box');
+      return;
+    }
+
+    const normalizedTracking = tracking.trim().toUpperCase();
+
+    if (!TRACKING_REGEX.test(normalizedTracking)) {
+      toast.error('Format de tracking invalide. Attendu : YAL-XXXXXX, ECH-XXXXXX, ACC-XXXXXX ou RCC-XXXXXX');
+      playError();
       return;
     }
 
     setLoading(true);
 
     // Check incoming transfer first
-    const transferResult = await checkIncomingTransfer(tracking.trim());
+    const transferResult = await checkIncomingTransfer(normalizedTracking);
     if (transferResult !== 'not_transfer') {
       setTracking('');
       setLoading(false);

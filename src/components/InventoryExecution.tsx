@@ -153,14 +153,8 @@ const InventoryExecution: React.FC = () => {
 
   const handleScan = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== 'Enter') return;
-    const tracking = scanInput.trim();
+    const tracking = scanInput.trim().toUpperCase();
     if (!tracking) return;
-
-    if (scannedTrackings.has(tracking) || extraTrackings.includes(tracking)) {
-      playError();
-      toast.error('Déjà scanné');
-      return;
-    }
 
     const upperTracking = tracking.toUpperCase();
 
