@@ -1,112 +1,77 @@
 
 
-## Admin Permissions System
+## Inventory Fixes and Enhancements
 
 ### Overview
-Create a fine-grained permissions system: a `user_permissions` table for per-user overrides, a `usePermission` hook for checking access throughout the app, and an admin page for managing it all.
+Six changes: tracking case normalization, overdue threshold to 4h, PDF report generation, dashboard warehouse name display, created_by/created_at columns in schedule list, and tracking format validation.
 
 ---
 
-### Phase 1 — Database Migration
+### 1. Tracking Case Normalization
 
-**New table: `user_permissions`**
-- Columns: `id` (UUID PK), `user_id` (UUID FK → profiles), `permission_key` (TEXT), `granted` (BOOLEAN), `created_at`, `updated_at`
-- Unique constraint on `(user_id, permission_key)`
-- RLS: super_admin can do ALL; users can SELECT their own rows
+**Migration:** Create a `BEFORE INSERT OR UPDATE` trigger on `parcels` that uppercases `NEW.tracking`.
 
-**No CHECK constraint on permission_key** — validated at the application level.
-
----
-
-### Phase 2 — Permission Defaults Map + Hook
-
-**`src/hooks/usePermission.ts`**
-- Define a `DEFAULT_ROLE_PERMISSIONS` map: for each role, which permission keys are granted by default
-- Fetch current user's `user_permissions` rows once (cached in state/context)
-- `usePermission(key: string) → boolean`:
-  - super_admin → always true
-  - If override exists in `user_permissions` → use `granted` value
-  - Otherwise → use role default from map
-- Also export `usePermissions()` returning the full resolved map (for the admin page)
-
-**`src/contexts/PermissionContext.tsx`**
-- Wraps the app inside AuthProvider, loads user_permissions on login
-- Provides permissions data to the hook
+**Code changes:**
+- `InventoryExecution.tsx` line ~165: compare with `p.tracking === tracking.toUpperCase()` (or just `.toUpperCase()` the scan input)
+- `AddParcel.tsx`: uppercase tracking before insert
+- All other scan/search comparisons: apply `.toUpperCase()` client-side as well
 
 ---
 
-### Phase 3 — Admin Permissions Page
+### 2. Overdue Threshold: 24h → 4h
 
-**`src/components/admin/Permissions.tsx`**
-
-**Section 1 — Individual user management:**
-- Searchable user dropdown (all profiles)
-- Role editor (dropdown of 4 roles)
-- Permission table grouped by category (Pages / Actions), each with a Switch toggle
-- Visual indicator when a permission differs from role default ("Personnalisé" badge)
-- "Apply" button: updates `profiles.role` if changed + upserts `user_permissions` for overrides only
-- "Reset" button: deletes all `user_permissions` for that user
-
-**Section 2 — Bulk operations:**
-- User list with checkboxes for multi-select
-- Actions panel:
-  - Change role for all selected
-  - Grant/revoke a specific permission for all selected
-  - Reset all overrides for selected
-- Confirmation with count of affected users before applying
+**Migration:** Replace in `check_overdue_inventories()`:
+- `NOW() - INTERVAL '24 hours'` → `NOW() - INTERVAL '4 hours'` (both occurrences)
 
 ---
 
-### Phase 4 — App Integration
+### 3. Inventory PDF Report
 
-**`src/components/AppLayout.tsx`:**
-- Add `'permissions'` to Page type
-- Add nav item "Permissions" (Shield icon), visible only for super_admin
-- Replace current `show` logic in navItems to use `usePermission('page_xxx')` for each page
-- Render `<Permissions />` for the permissions page
+**New file:** `src/components/InventoryReportModal.tsx`
 
-**Component-level guards:**
-- In components that perform protected actions (transfer, give parcels, mark missing, etc.), use `usePermission('action_xxx')` to conditionally render or disable buttons
+- Accepts a completed `InventorySession` as prop
+- Fetches: inventory_checks (with box names), profiles for `completed_by` and `created_by`, and the linked `scheduled_inventories` record for `created_by`/`created_at`
+- Displays summary: date, duration, created by, executed by, notes, box-by-box discrepancies
+- "Export PDF" button using `jspdf` (dynamic import): generates a formatted PDF with all the above data
+
+**Modified:** `src/components/InventoryReports.tsx` — add a "PDF" button per session row that opens the modal
 
 ---
 
-### Files
+### 4. Dashboard: Show Warehouse Name on Next Inventory
 
-- **New:** `src/hooks/usePermission.ts`, `src/contexts/PermissionContext.tsx`, `src/components/admin/Permissions.tsx`
-- **Modified:** `src/components/AppLayout.tsx` (nav + page routing + permission checks), `src/App.tsx` (wrap with PermissionProvider), `src/types/database.ts` (add UserPermission type)
-- **Migration:** 1 file (user_permissions table + RLS)
+**Modified:** `src/components/Dashboard.tsx`
+- `loadNextInventory`: add `warehouse_id` to the select
+- In the next inventory card, display `warehouseNames[nextInventory.warehouse_id]` alongside the date
 
-### Permission Keys
+---
 
-**Pages:** `page_dashboard`, `page_add_parcel`, `page_boxes`, `page_donner_retours`, `page_stock_control`, `page_statistics`, `page_advanced_stats`, `page_search`, `page_transfer`, `page_inventory`, `page_admin_users`, `page_admin_warehouses`, `page_admin_permissions`
+### 5. Created_by & Created_at in Schedule List
 
-**Actions:** `action_transfer_parcel`, `action_give_parcels`, `action_mark_missing`, `action_clear_box`, `action_export_excel`, `action_export_pptx`, `action_edit_box`, `action_plan_inventory`, `action_execute_inventory`
+**Modified:** `src/components/InventorySchedule.tsx`
+- After loading inventories, fetch profile names for all distinct `created_by` IDs
+- Add two columns to the table: "Créé par" (full_name) and "Date de création" (formatted `created_at`)
 
-### Default Role Map (example)
+---
 
-```text
-                        operations  chef_agence  regional  super_admin
-page_dashboard              ✓           ✓          ✓          ✓
-page_add_parcel             ✓           ✓          ✓          ✓
-page_boxes                  ✗           ✓          ✓          ✓
-page_donner_retours         ✓           ✓          ✓          ✓
-page_stock_control          ✗           ✗          ✓          ✓
-page_statistics             ✓           ✓          ✓          ✓
-page_advanced_stats         ✗           ✗          ✓          ✓
-page_search                 ✓           ✓          ✓          ✓
-page_transfer               ✓           ✓          ✓          ✓
-page_inventory              ✗           ✓          ✓          ✓
-page_admin_users            ✗           ✗          ✗          ✓
-page_admin_warehouses       ✗           ✗          ✗          ✓
-page_admin_permissions      ✗           ✗          ✗          ✓
-action_give_parcels         ✓           ✓          ✓          ✓
-action_mark_missing         ✓           ✓          ✓          ✓
-action_transfer_parcel      ✓           ✓          ✓          ✓
-action_clear_box            ✗           ✓          ✓          ✓
-action_edit_box             ✗           ✓          ✓          ✓
-action_export_excel         ✓           ✓          ✓          ✓
-action_export_pptx          ✗           ✗          ✓          ✓
-action_plan_inventory       ✗           ✗          ✓          ✓
-action_execute_inventory    ✗           ✓          ✓          ✓
-```
+### 6. Tracking Format Validation
+
+**Code changes in `AddParcel.tsx`:**
+- Before insert, validate tracking against regex `^(YAL|ECH|ACC|RCC)-[A-Z0-9]{6}$` (case-insensitive, then uppercased)
+- Show toast error if invalid format
+- Apply same validation in `InventoryExecution.tsx` scan handler (optional warning)
+
+---
+
+### Files Summary
+
+| File | Action |
+|------|--------|
+| Migration SQL | New trigger (uppercase tracking) + updated `check_overdue_inventories` |
+| `src/components/InventoryReportModal.tsx` | New — PDF report modal |
+| `src/components/InventoryReports.tsx` | Add PDF button per session |
+| `src/components/InventorySchedule.tsx` | Add created_by/created_at columns |
+| `src/components/Dashboard.tsx` | Show warehouse name on next inventory card |
+| `src/components/InventoryExecution.tsx` | Uppercase tracking comparison |
+| `src/components/AddParcel.tsx` | Uppercase + regex validation |
 
