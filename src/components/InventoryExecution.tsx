@@ -162,10 +162,19 @@ const InventoryExecution: React.FC = () => {
       return;
     }
 
-    const isExpected = expectedParcels.some(p => p.tracking === tracking);
+    const upperTracking = tracking.toUpperCase();
+
+    if (scannedTrackings.has(upperTracking) || extraTrackings.includes(upperTracking)) {
+      playError();
+      toast.error('Déjà scanné');
+      setScanInput('');
+      return;
+    }
+
+    const isExpected = expectedParcels.some(p => p.tracking === upperTracking);
     if (isExpected) {
       playSuccess();
-      setScannedTrackings(prev => new Set(prev).add(tracking));
+      setScannedTrackings(prev => new Set(prev).add(upperTracking));
     } else {
       playError();
       setExtraTrackings(prev => [...prev, tracking]);
